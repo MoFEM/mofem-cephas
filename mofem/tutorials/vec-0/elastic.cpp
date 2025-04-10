@@ -34,14 +34,6 @@ using DomainEleOp = DomainEle::UserDataOperator;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
 //! [Define entities]
 
-//! [OpK]
-using OpK = FormsIntegrators<DomainEleOp>::Assembly<A>::BiLinearForm<
-    I>::OpGradSymTensorGrad<BASE_DIM, SPACE_DIM, SPACE_DIM, 0>;
-//! [OpK]
-//! [OpInternalForce]
-using OpInternalForce = FormsIntegrators<DomainEleOp>::Assembly<A>::LinearForm<
-    I>::OpGradTimesSymTensor<BASE_DIM, SPACE_DIM, SPACE_DIM>;
-//! [OpInternalForce]
 struct DomainBCs {};
 struct BoundaryBCs {};
 
@@ -69,19 +61,19 @@ template <> struct PostProcEleByDim<3> {
 using PostProcEleDomain = PostProcEleByDim<SPACE_DIM>::PostProcEleDomain;
 using SideEle = PostProcEleByDim<SPACE_DIM>::SideEle;
 using PostProcEleBdy = PostProcEleByDim<SPACE_DIM>::PostProcEleBdy;
-
-#include <ElasticSpring.hpp>
-#include <FluidLevel.hpp>
-#include <CalculateTraction.hpp>
-#include <NaturalDomainBC.hpp>
-#include <NaturalBoundaryBC.hpp>
-
 constexpr double young_modulus = 1;
 constexpr double poisson_ratio = 0.3;
 constexpr double bulk_modulus_K = young_modulus / (3 * (1 - 2 * poisson_ratio));
 constexpr double shear_modulus_G = young_modulus / (2 * (1 + poisson_ratio));
 
 PetscBool is_plane_strain = PETSC_FALSE;
+
+#include <ElasticSpring.hpp>
+#include <FluidLevel.hpp>
+#include <CalculateTraction.hpp>
+#include <NaturalDomainBC.hpp>
+#include <NaturalBoundaryBC.hpp>
+#include <HookeOps.hpp>
 
 struct Example {
 
@@ -104,140 +96,7 @@ private:
   MoFEMErrorCode solveSystem();
   MoFEMErrorCode outputResults();
   MoFEMErrorCode checkResults();
-
-  MoFEMErrorCode addMatBlockOps(
-      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-      std::string field_name, std::string block_name,
-      boost::shared_ptr<MatrixDouble> mat_D_Ptr, Sev sev);
 };
-
-MoFEMErrorCode Example::addMatBlockOps(
-    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-    std::string field_name, std::string block_name,
-    boost::shared_ptr<MatrixDouble> mat_D_Ptr, Sev sev) {
-  MoFEMFunctionBegin;
-
-  struct OpMatBlocks : public DomainEleOp {
-    OpMatBlocks(std::string field_name, boost::shared_ptr<MatrixDouble> m,
-                double bulk_modulus_K, double shear_modulus_G,
-                MoFEM::Interface &m_field, Sev sev,
-                std::vector<const CubitMeshSets *> meshset_vec_ptr)
-        : DomainEleOp(field_name, DomainEleOp::OPROW), matDPtr(m),
-          bulkModulusKDefault(bulk_modulus_K),
-          shearModulusGDefault(shear_modulus_G) {
-      std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-      CHK_THROW_MESSAGE(extractBlockData(m_field, meshset_vec_ptr, sev),
-                        "Can not get data from block");
-    }
-
-    MoFEMErrorCode doWork(int side, EntityType type,
-                          EntitiesFieldData::EntData &data) {
-      MoFEMFunctionBegin;
-
-      for (auto &b : blockData) {
-
-        if (b.blockEnts.find(getFEEntityHandle()) != b.blockEnts.end()) {
-          CHKERR getMatDPtr(matDPtr, b.bulkModulusK, b.shearModulusG);
-          MoFEMFunctionReturnHot(0);
-        }
-      }
-
-      CHKERR getMatDPtr(matDPtr, bulkModulusKDefault, shearModulusGDefault);
-      MoFEMFunctionReturn(0);
-    }
-
-  private:
-    boost::shared_ptr<MatrixDouble> matDPtr;
-
-    struct BlockData {
-      double bulkModulusK;
-      double shearModulusG;
-      Range blockEnts;
-    };
-
-    double bulkModulusKDefault;
-    double shearModulusGDefault;
-    std::vector<BlockData> blockData;
-
-    MoFEMErrorCode
-    extractBlockData(MoFEM::Interface &m_field,
-                     std::vector<const CubitMeshSets *> meshset_vec_ptr,
-                     Sev sev) {
-      MoFEMFunctionBegin;
-
-      for (auto m : meshset_vec_ptr) {
-        MOFEM_TAG_AND_LOG("WORLD", sev, "MatBlock") << *m;
-        std::vector<double> block_data;
-        CHKERR m->getAttributes(block_data);
-        if (block_data.size() < 2) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Expected that block has two attributes");
-        }
-        auto get_block_ents = [&]() {
-          Range ents;
-          CHKERR
-          m_field.get_moab().get_entities_by_handle(m->meshset, ents, true);
-          return ents;
-        };
-
-        double young_modulus = block_data[0];
-        double poisson_ratio = block_data[1];
-        double bulk_modulus_K = young_modulus / (3 * (1 - 2 * poisson_ratio));
-        double shear_modulus_G = young_modulus / (2 * (1 + poisson_ratio));
-
-        MOFEM_TAG_AND_LOG("WORLD", sev, "MatBlock")
-            << "E = " << young_modulus << " nu = " << poisson_ratio;
-
-        blockData.push_back(
-            {bulk_modulus_K, shear_modulus_G, get_block_ents()});
-      }
-      MOFEM_LOG_CHANNEL("WORLD");
-      MoFEMFunctionReturn(0);
-    }
-
-    MoFEMErrorCode getMatDPtr(boost::shared_ptr<MatrixDouble> mat_D_ptr,
-                              double bulk_modulus_K, double shear_modulus_G) {
-      MoFEMFunctionBegin;
-      //! [Calculate elasticity tensor]
-      auto set_material_stiffness = [&]() {
-        FTensor::Index<'i', SPACE_DIM> i;
-        FTensor::Index<'j', SPACE_DIM> j;
-        FTensor::Index<'k', SPACE_DIM> k;
-        FTensor::Index<'l', SPACE_DIM> l;
-        constexpr auto t_kd = FTensor::Kronecker_Delta_symmetric<int>();
-        double A = 1.;
-        if (SPACE_DIM == 2 && !is_plane_strain) {
-          A = 2 * shear_modulus_G /
-              (bulk_modulus_K + (4. / 3.) * shear_modulus_G);
-        }
-        auto t_D = getFTensor4DdgFromMat<SPACE_DIM, SPACE_DIM, 0>(*mat_D_ptr);
-        t_D(i, j, k, l) =
-            2 * shear_modulus_G * ((t_kd(i, k) ^ t_kd(j, l)) / 4.) +
-            A * (bulk_modulus_K - (2. / 3.) * shear_modulus_G) * t_kd(i, j) *
-                t_kd(k, l);
-      };
-      //! [Calculate elasticity tensor]
-      constexpr auto size_symm = (SPACE_DIM * (SPACE_DIM + 1)) / 2;
-      mat_D_ptr->resize(size_symm * size_symm, 1);
-      set_material_stiffness();
-      MoFEMFunctionReturn(0);
-    }
-  };
-
-  pipeline.push_back(new OpMatBlocks(
-      field_name, mat_D_Ptr, bulk_modulus_K, shear_modulus_G, mField, sev,
-
-      // Get blockset using regular expression
-      mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
-
-          (boost::format("%s(.*)") % block_name).str()
-
-              ))
-
-          ));
-
-  MoFEMFunctionReturn(0);
-}
 
 //! [Run problem]
 MoFEMErrorCode Example::runProblem() {
@@ -391,34 +250,13 @@ MoFEMErrorCode Example::assembleSystem() {
   CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
       pip->getOpBoundaryLhsPipeline(), {NOSPACE}, "GEOMETRY");
 
-  //! [Push domain stiffness matrix to pipeline]
-  auto mat_D_ptr = boost::make_shared<MatrixDouble>();
+  // Add LHS operator for elasticity (stiffness matrix)
+  CHKERR HookeOps::opFactoryDomainLhs<SPACE_DIM, A, I, DomainEleOp>(
+      mField, pip->getOpDomainLhsPipeline(), "U", "MAT_ELASTIC", Sev::verbose);
 
-  // Assemble domain stiffness matrix
-  CHKERR addMatBlockOps(pip->getOpDomainLhsPipeline(), "U", "MAT_ELASTIC",
-                        mat_D_ptr, Sev::verbose);
-  pip->getOpDomainLhsPipeline().push_back(new OpK("U", "U", mat_D_ptr));
-  //! [Push domain stiffness matrix to pipeline]
-
-  //! [Push Internal forces]
-  auto mat_grad_ptr = boost::make_shared<MatrixDouble>();
-  auto mat_strain_ptr = boost::make_shared<MatrixDouble>();
-  auto mat_stress_ptr = boost::make_shared<MatrixDouble>();
-  pip->getOpDomainRhsPipeline().push_back(
-      new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U",
-                                                               mat_grad_ptr));
-  CHKERR addMatBlockOps(pip->getOpDomainRhsPipeline(), "U", "MAT_ELASTIC",
-                        mat_D_ptr, Sev::inform);
-  pip->getOpDomainRhsPipeline().push_back(
-      new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
-  pip->getOpDomainRhsPipeline().push_back(
-      new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-          mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
-
-  pip->getOpDomainRhsPipeline().push_back(
-      new OpInternalForce("U", mat_stress_ptr,
-                          [](double, double, double) constexpr { return -1; }));
-  //! [Push Internal forces]
+  // Add RHS operator for internal forces
+  CHKERR HookeOps::opFactoryDomainRhs<SPACE_DIM, A, I, DomainEleOp>(
+      mField, pip->getOpDomainRhsPipeline(), "U", "MAT_ELASTIC", Sev::verbose, 0);
 
   //! [Push Body forces]
   CHKERR DomainRhsBCs::AddFluxToPipeline<OpDomainRhsBCs>::add(
@@ -577,29 +415,28 @@ MoFEMErrorCode Example::outputResults() {
       mField, post_proc_mesh);
   //! [Postprocess initialise]
 
+// lamdaa function to calculate dispalcement, strain and stress 
   auto calculate_stress_ops = [&](auto &pip) {
+    // Add H1 geometry ops
     AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1}, "GEOMETRY");
-    auto mat_grad_ptr = boost::make_shared<MatrixDouble>();
-    auto mat_strain_ptr = boost::make_shared<MatrixDouble>();
-    auto mat_stress_ptr = boost::make_shared<MatrixDouble>();
-    pip.push_back(new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
-        "U", mat_grad_ptr));
-    auto mat_D_ptr = boost::make_shared<MatrixDouble>();
-    CHKERR addMatBlockOps(pip, "U", "MAT_ELASTIC", mat_D_ptr, Sev::verbose);
-    pip.push_back(
-        new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
-    pip.push_back(new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-        mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
+
+    // Use HookeOps commonDataFactory to get matStrainPtr and matCauchyStressPtr
+    auto common_ptr = HookeOps::commonDataFactory<SPACE_DIM, GAUSS, DomainEle>(
+        mField, pip, "U", "MAT_ELASTIC", Sev::verbose);
+
+    // Store U and GEOMETRY values if needed
     auto u_ptr = boost::make_shared<MatrixDouble>();
     pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
     auto x_ptr = boost::make_shared<MatrixDouble>();
     pip.push_back(
         new OpCalculateVectorFieldValues<SPACE_DIM>("GEOMETRY", x_ptr));
-    return boost::make_tuple(u_ptr, x_ptr, mat_strain_ptr, mat_stress_ptr);
+
+    // Return what you need: displacements, coordinates, strain, stress
+    return boost::make_tuple(u_ptr, x_ptr, common_ptr->getMatStrain(),
+                             common_ptr->getMatCauchyStress());
   };
 
-  auto get_tag_id_on_pmesh = [&](bool post_proc_skin)
-  {
+  auto get_tag_id_on_pmesh = [&](bool post_proc_skin) {
     int def_val_int = 0;
     Tag tag_mat;
     CHKERR mField.get_moab().tag_get_handle(
@@ -748,31 +585,13 @@ MoFEMErrorCode Example::checkResults() {
   CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
       pip->getOpBoundaryRhsPipeline(), {}, "GEOMETRY");
 
-  auto mat_grad_ptr = boost::make_shared<MatrixDouble>();
-  auto mat_strain_ptr = boost::make_shared<MatrixDouble>();
-  auto mat_stress_ptr = boost::make_shared<MatrixDouble>();
+  // Add RHS operators for internal forces
+  CHKERR HookeOps::opFactoryDomainRhs<SPACE_DIM, A, I, DomainEleOp>(
+      mField, pip->getOpDomainRhsPipeline(), "U", "MAT_ELASTIC", Sev::verbose, 0);
 
-  pip->getOpDomainRhsPipeline().push_back(
-      new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U",
-                                                               mat_grad_ptr));
-  pip->getOpDomainRhsPipeline().push_back(
-      new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
-
-  auto mat_D_ptr = boost::make_shared<MatrixDouble>();
-  CHKERR addMatBlockOps(pip->getOpDomainRhsPipeline(), "U", "MAT_ELASTIC",
-                        mat_D_ptr, Sev::verbose);
-  pip->getOpDomainRhsPipeline().push_back(
-      new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-          mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
-
-  pip->getOpDomainRhsPipeline().push_back(
-      new OpInternalForce("U", mat_stress_ptr));
-
-  pip->getOpBoundaryRhsPipeline().push_back(
-      new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-          mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
   CHKERR DomainRhsBCs::AddFluxToPipeline<OpDomainRhsBCs>::add(
       pip->getOpDomainRhsPipeline(), mField, "U", Sev::verbose);
+
   CHKERR BoundaryRhsBCs::AddFluxToPipeline<OpBoundaryRhsBCs>::add(
       pip->getOpBoundaryRhsPipeline(), mField, "U", -1, Sev::verbose);
 
@@ -785,9 +604,9 @@ MoFEMErrorCode Example::checkResults() {
 
   CHKERR VecZeroEntries(res);
 
-  CHKERR mField.getInterface<FieldBlas>()->fieldScale(-1, "U");
   CHKERR pip->loopFiniteElements();
-  CHKERR mField.getInterface<FieldBlas>()->fieldScale(-1, "U");
+  // CHKERR mField.getInterface<FieldBlas>()->fieldScale(-1, "U");
+
 
   CHKERR VecGhostUpdateBegin(res, ADD_VALUES, SCATTER_REVERSE);
   CHKERR VecGhostUpdateEnd(res, ADD_VALUES, SCATTER_REVERSE);
@@ -1011,9 +830,10 @@ MoFEMErrorCode SetUpSchurImpl::createSubDM() {
       CHKERR DMSetUp(dm);
       MoFEMFunctionReturn(0);
     };
-    CHK_THROW_MESSAGE(create_dm_imp(),
-                      "Error in creating schurDM. It is possible that schurDM is "
-                      "already created");
+    CHK_THROW_MESSAGE(
+        create_dm_imp(),
+        "Error in creating schurDM. It is possible that schurDM is "
+        "already created");
     return dm;
   };
 

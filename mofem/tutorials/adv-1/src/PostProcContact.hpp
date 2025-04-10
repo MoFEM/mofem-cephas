@@ -29,9 +29,9 @@ struct Monitor : public FEMethod {
 
   Monitor(SmartPetscObj<DM> &dm, double scale,
           boost::shared_ptr<GenericElementInterface> mfront_interface = nullptr,
-          bool is_axisymmetric = false)
+          bool is_axisymmetric = false, bool is_large_strain = false)
       : dM(dm), moabVertex(mbVertexPostproc), sTEP(0),
-        mfrontInterface(mfront_interface) {
+        mfrontInterface(mfront_interface), isLargeStrain(is_large_strain) {
 
     MoFEM::Interface *m_field_ptr;
     CHKERR DMoFEMGetInterfacePtr(dM, &m_field_ptr);
@@ -43,7 +43,7 @@ struct Monitor : public FEMethod {
           : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
             mPtr(m_ptr), scale(s) {}
       MoFEMErrorCode doWork(int, EntityType, EntitiesFieldData::EntData &) {
-        *mPtr *= 1./scale;
+        *mPtr *= 1. / scale;
         return 0;
       }
 
@@ -56,16 +56,34 @@ struct Monitor : public FEMethod {
       CHK_THROW_MESSAGE((AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
                             pip, {H1, HDIV}, "GEOMETRY")),
                         "Apply base transform");
-      auto hencky_common_data_ptr =
-          commonDataFactory<SPACE_DIM, GAUSS, DomainEleOp>(
-              *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform, scale);
-      auto contact_stress_ptr = boost::make_shared<MatrixDouble>();
-      pip.push_back(new OpCalculateHVecTensorField<SPACE_DIM, SPACE_DIM>(
-          "SIGMA", contact_stress_ptr));
-      pip.push_back(new OpScale(contact_stress_ptr, scale));
-      return std::make_tuple(hencky_common_data_ptr, contact_stress_ptr);
-    };
+      // Define a variant type that can hold either HookeOps or HenckyOps
+      // CommonData.
+      using CommonDataVariant =
+          std::variant<boost::shared_ptr<HookeOps::CommonData>,
+                       boost::shared_ptr<HenckyOps::CommonData>>;
 
+      if (!isLargeStrain) { // use HookeOps
+        auto hooke_common_data_ptr =
+            HookeOps::commonDataFactory<SPACE_DIM, GAUSS, DomainEleOp>(
+                *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform, scale);
+        auto contact_stress_ptr = boost::make_shared<MatrixDouble>();
+        pip.push_back(new OpCalculateHVecTensorField<SPACE_DIM, SPACE_DIM>(
+            "SIGMA", contact_stress_ptr));
+        pip.push_back(new OpScale(contact_stress_ptr, scale));
+        return std::make_tuple(CommonDataVariant(hooke_common_data_ptr),
+                               contact_stress_ptr);
+      } else { // use HenckyOps
+        auto hencky_common_data_ptr =
+            HenckyOps::commonDataFactory<SPACE_DIM, GAUSS, DomainEleOp>(
+                *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform, scale);
+        auto contact_stress_ptr = boost::make_shared<MatrixDouble>();
+        pip.push_back(new OpCalculateHVecTensorField<SPACE_DIM, SPACE_DIM>(
+            "SIGMA", contact_stress_ptr));
+        pip.push_back(new OpScale(contact_stress_ptr, scale));
+        return std::make_tuple(CommonDataVariant(hencky_common_data_ptr),
+                               contact_stress_ptr);
+      }
+    };
     auto push_bdy_ops = [&](auto &pip) {
       // evaluate traction
       auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
@@ -98,8 +116,8 @@ struct Monitor : public FEMethod {
       auto post_proc_fe =
           boost::make_shared<PostProcEleDomain>(*m_field_ptr, postProcMesh);
       auto &pip = post_proc_fe->getOpPtrVector();
-
-      auto [hencky_common_data_ptr, contact_stress_ptr] =
+      // Get common data pointer (either Hooke or Hencky)
+      auto [hencky_or_hook_common_data_ptr, contact_stress_ptr] =
           push_domain_ops(get_domain_pip(pip));
 
       auto u_ptr = boost::make_shared<MatrixDouble>();
@@ -108,34 +126,44 @@ struct Monitor : public FEMethod {
       pip.push_back(
           new OpCalculateVectorFieldValues<SPACE_DIM>("GEOMETRY", X_ptr));
 
+      // Visit the variant to handle either HookeOps::CommonData or
+      // HenckyOps::CommonData, to set up appropriate post-processing mapping
+      // operators.
+      std::visit(
+          [&](auto &common_data_ptr) {
+             // Handle HookeOps::CommonData
+            if constexpr (std::is_same_v<
+                              std::decay_t<decltype(common_data_ptr)>,
+                              boost::shared_ptr<HookeOps::CommonData>>) {
 
+              pip.push_back(new OpPPMap(
+                  post_proc_fe->getPostProcMesh(),
+                  post_proc_fe->getMapGaussPts(), {},
+                  {{"U", u_ptr}, {"GEOMETRY", X_ptr}},
+                  {{"SIGMA", contact_stress_ptr},
+                   {"G", common_data_ptr->matGradPtr}},
+                  {{"STRESS", common_data_ptr->getMatCauchyStress()},
+                   {"STRAIN", common_data_ptr->getMatStrain()}}));
+            } 
+            // Handle HenckyOps::CommonData
+            else if constexpr (std::is_same_v<
+                                     std::decay_t<decltype(common_data_ptr)>,
+                                     boost::shared_ptr<
+                                         HenckyOps::CommonData>>) {
 
-      pip.push_back(
+              pip.push_back(new OpPPMap(
+                  post_proc_fe->getPostProcMesh(),
+                  post_proc_fe->getMapGaussPts(), {},
+                  {{"U", u_ptr}, {"GEOMETRY", X_ptr}},
+                  {{"SIGMA", contact_stress_ptr},
+                   {"G", common_data_ptr->matGradPtr},
+                   {"PK1", common_data_ptr->getMatFirstPiolaStress()}
 
-          new OpPPMap(
-
-              post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
-
-              {},
-              {
-
-                  {"U", u_ptr}, {"GEOMETRY", X_ptr}
-
-              },
-              {
-
-                  {"SIGMA", contact_stress_ptr},
-
-                  {"G", hencky_common_data_ptr->matGradPtr},
-
-                  {"PK1", hencky_common_data_ptr->getMatFirstPiolaStress()}
-
-              },
-              {}
-
-              )
-
-      );
+                  },
+                  {{"HENCKY_STRAIN", common_data_ptr->getMatLogC()}}));
+            }
+          },
+          hencky_or_hook_common_data_ptr);
 
       if (SPACE_DIM == 3) {
 
@@ -252,7 +280,8 @@ struct Monitor : public FEMethod {
           (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
               integrate_area->getOpPtrVector(), {HDIV}, "GEOMETRY")),
           "Apply transform");
-      // We have to integrate on curved face geometry, thus integration weight have to adjusted.
+      // We have to integrate on curved face geometry, thus integration weight
+      // have to adjusted.
       integrate_area->getOpPtrVector().push_back(
           new OpSetHOWeightsOnSubDim<SPACE_DIM>());
       integrate_area->getRuleHook = [](int, int, int approx_order) {
@@ -859,6 +888,7 @@ private:
   double lastTime;
   double deltaTime;
   int sTEP;
+  bool isLargeStrain;
 
   boost::shared_ptr<GenericElementInterface> mfrontInterface;
 };

@@ -11,11 +11,11 @@
 "EXECUTABLE_DIMENSION" has been defined. If it has not been defined, it is set
 to 3" */
 #ifndef EXECUTABLE_DIMENSION
-#define EXECUTABLE_DIMENSION 3
+  #define EXECUTABLE_DIMENSION 3
 #endif
 
 #ifndef SCHUR_ASSEMBLE
-#define SCHUR_ASSEMBLE 0
+  #define SCHUR_ASSEMBLE 0
 #endif
 
 #include <MoFEM.hpp>
@@ -26,9 +26,9 @@ using namespace MoFEM;
 #include <GenericElementInterface.hpp>
 
 #ifdef PYTHON_SDF
-#include <boost/python.hpp>
-#include <boost/python/def.hpp>
-#include <boost/python/numpy.hpp>
+  #include <boost/python.hpp>
+  #include <boost/python/def.hpp>
+  #include <boost/python/numpy.hpp>
 namespace bp = boost::python;
 namespace np = boost::python::numpy;
 #endif
@@ -78,7 +78,7 @@ using OpSpringRhs = FormsIntegrators<BoundaryEleOp>::Assembly<AT>::LinearForm<
 PetscBool is_quasi_static = PETSC_TRUE;
 
 int order = 2;         //< Order of displacements in the domain
-int contact_order = 2; //< Order of displacements in boundary and side elements 
+int contact_order = 2; //< Order of displacements in boundary and side elements
 int sigma_order = 1;   //< Order of Lagrange multiplier in side elements
 int geom_order = 1;
 double young_modulus = 100;
@@ -91,6 +91,7 @@ double alpha_damping = 0;
 double scale = 1.;
 
 PetscBool is_axisymmetric = PETSC_FALSE; //< Axisymmetric model
+PetscBool is_large_strain = PETSC_FALSE;
 
 // #define HENCKY_SMALL_STRAIN
 
@@ -101,13 +102,15 @@ double cn_contact = 0.1;
 }; // namespace ContactOps
 
 #include <HenckyOps.hpp>
+#include <HookeOps.hpp>
 using namespace HenckyOps;
+using namespace HookeOps;
 #include <ContactOps.hpp>
 #include <PostProcContact.hpp>
 #include <ContactNaturalBC.hpp>
 
 #ifdef WITH_MODULE_MFRONT_INTERFACE
-#include <MFrontMoFEMInterface.hpp>
+  #include <MFrontMoFEMInterface.hpp>
 #endif
 
 using DomainRhsBCs = NaturalBC<DomainEleOp>::Assembly<AT>::LinearForm<IT>;
@@ -174,7 +177,8 @@ MoFEMErrorCode Contact::runProblem() {
 MoFEMErrorCode Contact::setupProblem() {
   MoFEMFunctionBegin;
   Simple *simple = mField.getInterface<Simple>();
-
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_large_strain", &is_large_strain,
+                             PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-contact_order", &contact_order,
                             PETSC_NULL);
@@ -183,7 +187,13 @@ MoFEMErrorCode Contact::setupProblem() {
                             PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-geom_order", &geom_order,
                             PETSC_NULL);
-
+  if (!is_large_strain) {
+    MOFEM_LOG("CONTACT", Sev::inform)
+        << "Problem scheme choosen for small strain";
+  } else {
+    MOFEM_LOG("CONTACT", Sev::inform)
+        << "Problem scheme choosen for large strain";
+  }
   MOFEM_LOG("CONTACT", Sev::inform) << "Order " << order;
   MOFEM_LOG("CONTACT", Sev::inform) << "Contact order " << contact_order;
   MOFEM_LOG("CONTACT", Sev::inform) << "Sigma order " << sigma_order;
@@ -316,10 +326,9 @@ MoFEMErrorCode Contact::createCommonData() {
 
   PetscBool use_mfront = PETSC_FALSE;
 
-  PetscBool use_henckyOps = PETSC_FALSE;
-  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_mfront", &≈ƒ,
-  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_henckyOps", &use_henckyOps,
-                              PETSC_NULL);
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_mfront", &use_mfront,
+                             PETSC_NULL);
+
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_axisymmetric",
                              &is_axisymmetric, PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
@@ -506,10 +515,6 @@ MoFEMErrorCode Contact::OPs() {
     MoFEMFunctionReturn(0);
   };
 
-  auto hencky_common_data_ptr = boost::make_shared<HenckyOps::CommonData>();
-  hencky_common_data_ptr->matDPtr = boost::make_shared<MatrixDouble>();
-  hencky_common_data_ptr->matGradPtr = boost::make_shared<MatrixDouble>();
-
   auto add_domain_ops_lhs = [&](auto &pip) {
     MoFEMFunctionBegin;
 
@@ -541,8 +546,13 @@ MoFEMErrorCode Contact::OPs() {
     }
 
     if (!mfrontInterface) {
-      CHKERR HenckyOps::opFactoryDomainLhs<SPACE_DIM, AT, IT, DomainEleOp>(
-          mField, pip, "U", "MAT_ELASTIC", Sev::verbose, scale);
+      if (!is_large_strain) {
+        CHKERR HookeOps::opFactoryDomainLhs<SPACE_DIM, AT, IT, DomainEleOp>(
+            mField, pip, "U", "MAT_ELASTIC", Sev::verbose, scale);
+      } else {
+        CHKERR HenckyOps::opFactoryDomainLhs<SPACE_DIM, AT, IT, DomainEleOp>(
+            mField, pip, "U", "MAT_ELASTIC", Sev::verbose, scale);
+      }
     } else {
       CHKERR mfrontInterface->opFactoryDomainLhs(pip);
     }
@@ -584,8 +594,13 @@ MoFEMErrorCode Contact::OPs() {
     }
 
     if (!mfrontInterface) {
-      CHKERR HenckyOps::opFactoryDomainRhs<SPACE_DIM, AT, IT, DomainEleOp>(
-          mField, pip, "U", "MAT_ELASTIC", Sev::inform, scale);
+      if (!is_large_strain) {
+        CHKERR HookeOps::opFactoryDomainRhs<SPACE_DIM, AT, IT, DomainEleOp>(
+            mField, pip, "U", "MAT_ELASTIC", Sev::inform, 1, scale);
+      } else {
+        CHKERR HenckyOps::opFactoryDomainRhs<SPACE_DIM, AT, IT, DomainEleOp>(
+            mField, pip, "U", "MAT_ELASTIC", Sev::inform, scale);
+      }
     } else {
       CHKERR mfrontInterface->opFactoryDomainRhs(pip);
     }
@@ -729,8 +744,9 @@ MoFEMErrorCode Contact::tsSolve() {
                                       PETSC_VIEWER_DEFAULT, &vf);
     CHKERR SNESMonitorSet(
         snes,
-        (MoFEMErrorCode(*)(SNES, PetscInt, PetscReal, void *))SNESMonitorFields,
-        vf, (MoFEMErrorCode(*)(void **))PetscViewerAndFormatDestroy);
+        (MoFEMErrorCode (*)(SNES, PetscInt, PetscReal,
+                            void *))SNESMonitorFields,
+        vf, (MoFEMErrorCode (*)(void **))PetscViewerAndFormatDestroy);
     MoFEMFunctionReturn(0);
   };
 
@@ -1193,8 +1209,7 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
   pip->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
   pip->getOpDomainLhsPipeline().push_back(
 
-      createOpSchurAssembleEnd({"SIGMA"}, {nullptr}, ao_up, S, false,
-                               false)
+      createOpSchurAssembleEnd({"SIGMA"}, {nullptr}, ao_up, S, false, false)
 
   );
 
