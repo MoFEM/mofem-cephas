@@ -239,7 +239,6 @@ struct OpCalculateLogCImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
       t_logC(i, j) = EigenMatrix::getMat(t_eig_val, t_eig_vec, f)(i, j);
-      t_logC(i, j) = EigenMatrix::getMat(t_eig_val, t_eig_vec, f)(i, j);
       ++t_eig_val;
       ++t_eig_vec;
       ++t_logC;
@@ -280,10 +279,6 @@ struct OpCalculateLogC_dCImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
       // rare case when two eigen values are equal
-      auto nb_uniq = get_uniq_nb<DIM>(&t_eig_val(0));
-      t_logC_dC(i, j, k, l) =
-          2 * EigenMatrix::getDiffMat(t_eig_val, t_eig_vec, f, d_f,
-                                      nb_uniq)(i, j, k, l);
       auto nb_uniq = get_uniq_nb<DIM>(&t_eig_val(0));
       t_logC_dC(i, j, k, l) =
           2 * EigenMatrix::getDiffMat(t_eig_val, t_eig_vec, f, d_f,
@@ -367,83 +362,7 @@ struct OpCalculateHenckyThermalStressImpl<DIM, GAUSS, DomainEleOp, S>
     FTensor::Index<'k', DIM> k;
     FTensor::Index<'l', DIM> l;
 
-    // const size_t nb_gauss_pts = matGradPtr->size2();
-    const size_t nb_gauss_pts = DomainEleOp::getGaussPts().size2();
-    auto t_D = getFTensor4DdgFromMat<DIM, DIM, S>(*commonDataPtr->matDPtr);
-    auto t_logC = getFTensor2SymmetricFromMat<DIM>(commonDataPtr->matLogC);
-    auto t_logC_dC = getFTensor4DdgFromMat<DIM, DIM>(commonDataPtr->matLogCdC);
-    constexpr auto size_symm = (DIM * (DIM + 1)) / 2;
-    commonDataPtr->matHenckyStress.resize(size_symm, nb_gauss_pts, false);
-    commonDataPtr->matFirstPiolaStress.resize(DIM * DIM, nb_gauss_pts, false);
-    commonDataPtr->matSecondPiolaStress.resize(size_symm, nb_gauss_pts, false);
-    auto t_T = getFTensor2SymmetricFromMat<DIM>(commonDataPtr->matHenckyStress);
-    auto t_P = getFTensor2FromMat<DIM, DIM>(commonDataPtr->matFirstPiolaStress);
-    auto t_S =
-        getFTensor2SymmetricFromMat<DIM>(commonDataPtr->matSecondPiolaStress);
-    auto t_grad = getFTensor2FromMat<DIM, DIM>(*(commonDataPtr->matGradPtr));
-    auto t_temp = getFTensor0FromVec(*tempPtr);
-
-    auto t_coeff_exp = FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM>();
-    t_coeff_exp(i, j) = 0;
-    for (auto d = 0; d != SPACE_DIM; ++d) {
-      t_coeff_exp(d, d) = (*coeffExpansionPtr)[d];
-    }
-
-    for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
-#ifdef HENCKY_SMALL_STRAIN
-      t_P(i, j) = t_D(i, j, k, l) *
-                  (t_grad(k, l) - t_coeff_exp(k, l) * (t_temp - (*refTempPtr)));
-#else
-      t_T(i, j) = t_D(i, j, k, l) *
-                  (t_logC(k, l) - t_coeff_exp(k, l) * (t_temp - (*refTempPtr)));
-      FTensor::Tensor2<double, DIM, DIM> t_F;
-      t_F(i, j) = t_grad(i, j) + t_kd(i, j);
-      t_S(k, l) = t_T(i, j) * t_logC_dC(i, j, k, l);
-      t_P(i, l) = t_F(i, k) * t_S(k, l);
-#endif
-      ++t_grad;
-      ++t_logC;
-      ++t_logC_dC;
-      ++t_P;
-      ++t_T;
-      ++t_S;
-      ++t_D;
-      ++t_temp;
-    }
-
-    MoFEMFunctionReturn(0);
-  }
-
-private:
-  boost::shared_ptr<CommonData> commonDataPtr;
-  boost::shared_ptr<VectorDouble> tempPtr;
-  boost::shared_ptr<VectorDouble> coeffExpansionPtr;
-  boost::shared_ptr<double> refTempPtr;
-};
-
-template <int DIM, typename DomainEleOp, int S>
-struct OpCalculateHenckyThermalStressImpl<DIM, GAUSS, DomainEleOp, S>
-    : public DomainEleOp {
-
-  OpCalculateHenckyThermalStressImpl(
-      const std::string field_name, boost::shared_ptr<VectorDouble> temperature,
-      boost::shared_ptr<CommonData> common_data,
-      boost::shared_ptr<VectorDouble> coeff_expansion_ptr,
-      boost::shared_ptr<double> ref_temp_ptr)
-      : DomainEleOp(field_name, DomainEleOp::OPROW), tempPtr(temperature),
-        commonDataPtr(common_data), coeffExpansionPtr(coeff_expansion_ptr),
-        refTempPtr(ref_temp_ptr) {
-    std::fill(&DomainEleOp::doEntities[MBEDGE],
-              &DomainEleOp::doEntities[MBMAXTYPE], false);
-  }
-
-  MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
-    MoFEMFunctionBegin;
-
-    FTensor::Index<'i', DIM> i;
-    FTensor::Index<'j', DIM> j;
-    FTensor::Index<'k', DIM> k;
-    FTensor::Index<'l', DIM> l;
+    constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
 
     // const size_t nb_gauss_pts = matGradPtr->size2();
     const size_t nb_gauss_pts = DomainEleOp::getGaussPts().size2();
