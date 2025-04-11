@@ -123,6 +123,12 @@ template <int DIM, IntegrationType I, typename DomainEleOp, int S>
 struct OpCalculateHenckyStressImpl;
 
 template <int DIM, IntegrationType I, typename DomainEleOp, int S>
+struct OpCalculateHenckyThermalStressImpl;
+
+template <int DIM, IntegrationType I, typename DomainEleOp, int S>
+struct OpCalculateHenckyThermalStressImpl;
+
+template <int DIM, IntegrationType I, typename DomainEleOp, int S>
 struct OpCalculateHenckyPlasticStressImpl;
 
 template <int DIM, IntegrationType I, typename DomainEleOp, int S>
@@ -130,6 +136,9 @@ struct OpCalculatePiolaStressImpl;
 
 template <int DIM, IntegrationType I, typename DomainEleOp, int S>
 struct OpHenckyTangentImpl;
+
+template <int DIM, IntegrationType I, typename DomainEleOp, int S>
+struct OpCalculateHenckyThermalStressdTImpl;
 
 template <int DIM, typename DomainEleOp>
 struct OpCalculateEigenValsImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
@@ -330,6 +339,86 @@ private:
 };
 
 template <int DIM, typename DomainEleOp, int S>
+struct OpCalculateHenckyThermalStressImpl<DIM, GAUSS, DomainEleOp, S>
+    : public DomainEleOp {
+
+  OpCalculateHenckyThermalStressImpl(
+      const std::string field_name, boost::shared_ptr<VectorDouble> temperature,
+      boost::shared_ptr<CommonData> common_data,
+      boost::shared_ptr<VectorDouble> coeff_expansion_ptr,
+      boost::shared_ptr<double> ref_temp_ptr)
+      : DomainEleOp(field_name, DomainEleOp::OPROW), tempPtr(temperature),
+        commonDataPtr(common_data), coeffExpansionPtr(coeff_expansion_ptr),
+        refTempPtr(ref_temp_ptr) {
+    std::fill(&DomainEleOp::doEntities[MBEDGE],
+              &DomainEleOp::doEntities[MBMAXTYPE], false);
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
+    MoFEMFunctionBegin;
+
+    FTensor::Index<'i', DIM> i;
+    FTensor::Index<'j', DIM> j;
+    FTensor::Index<'k', DIM> k;
+    FTensor::Index<'l', DIM> l;
+
+    constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
+
+    // const size_t nb_gauss_pts = matGradPtr->size2();
+    const size_t nb_gauss_pts = DomainEleOp::getGaussPts().size2();
+    auto t_D = getFTensor4DdgFromMat<DIM, DIM, S>(*commonDataPtr->matDPtr);
+    auto t_logC = getFTensor2SymmetricFromMat<DIM>(commonDataPtr->matLogC);
+    auto t_logC_dC = getFTensor4DdgFromMat<DIM, DIM>(commonDataPtr->matLogCdC);
+    constexpr auto size_symm = (DIM * (DIM + 1)) / 2;
+    commonDataPtr->matHenckyStress.resize(size_symm, nb_gauss_pts, false);
+    commonDataPtr->matFirstPiolaStress.resize(DIM * DIM, nb_gauss_pts, false);
+    commonDataPtr->matSecondPiolaStress.resize(size_symm, nb_gauss_pts, false);
+    auto t_T = getFTensor2SymmetricFromMat<DIM>(commonDataPtr->matHenckyStress);
+    auto t_P = getFTensor2FromMat<DIM, DIM>(commonDataPtr->matFirstPiolaStress);
+    auto t_S =
+        getFTensor2SymmetricFromMat<DIM>(commonDataPtr->matSecondPiolaStress);
+    auto t_grad = getFTensor2FromMat<DIM, DIM>(*(commonDataPtr->matGradPtr));
+    auto t_temp = getFTensor0FromVec(*tempPtr);
+
+    auto t_coeff_exp = FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM>();
+    t_coeff_exp(i, j) = 0;
+    for (auto d = 0; d != SPACE_DIM; ++d) {
+      t_coeff_exp(d, d) = (*coeffExpansionPtr)[d];
+    }
+
+    for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+#ifdef HENCKY_SMALL_STRAIN
+      t_P(i, j) = t_D(i, j, k, l) *
+                  (t_grad(k, l) - t_coeff_exp(k, l) * (t_temp - (*refTempPtr)));
+#else
+      t_T(i, j) = t_D(i, j, k, l) *
+                  (t_logC(k, l) - t_coeff_exp(k, l) * (t_temp - (*refTempPtr)));
+      FTensor::Tensor2<double, DIM, DIM> t_F;
+      t_F(i, j) = t_grad(i, j) + t_kd(i, j);
+      t_S(k, l) = t_T(i, j) * t_logC_dC(i, j, k, l);
+      t_P(i, l) = t_F(i, k) * t_S(k, l);
+#endif
+      ++t_grad;
+      ++t_logC;
+      ++t_logC_dC;
+      ++t_P;
+      ++t_T;
+      ++t_S;
+      ++t_D;
+      ++t_temp;
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<CommonData> commonDataPtr;
+  boost::shared_ptr<VectorDouble> tempPtr;
+  boost::shared_ptr<VectorDouble> coeffExpansionPtr;
+  boost::shared_ptr<double> refTempPtr;
+};
+
+template <int DIM, typename DomainEleOp, int S>
 struct OpCalculateHenckyPlasticStressImpl<DIM, GAUSS, DomainEleOp, S>
     : public DomainEleOp {
 
@@ -405,9 +494,9 @@ struct OpCalculatePiolaStressImpl<DIM, GAUSS, DomainEleOp, S>
 
     // const size_t nb_gauss_pts = matGradPtr->size2();
     const size_t nb_gauss_pts = DomainEleOp::getGaussPts().size2();
-    #ifdef HENCKY_SMALL_STRAIN
-      auto t_D = getFTensor4DdgFromMat<DIM, DIM, S>(*commonDataPtr->matDPtr);
-    #endif
+#ifdef HENCKY_SMALL_STRAIN
+    auto t_D = getFTensor4DdgFromMat<DIM, DIM, S>(*commonDataPtr->matDPtr);
+#endif
     auto t_logC = getFTensor2SymmetricFromMat<DIM>(commonDataPtr->matLogC);
     auto t_logC_dC = getFTensor4DdgFromMat<DIM, DIM>(commonDataPtr->matLogCdC);
     constexpr auto size_symm = (DIM * (DIM + 1)) / 2;
@@ -538,6 +627,112 @@ private:
   boost::shared_ptr<MatrixDouble> matDPtr;
 };
 
+template <int DIM, typename AssemblyDomainEleOp, int S>
+struct OpCalculateHenckyThermalStressdTImpl<DIM, GAUSS, AssemblyDomainEleOp, S>
+    : public AssemblyDomainEleOp {
+  OpCalculateHenckyThermalStressdTImpl(
+      const std::string row_field_name, const std::string col_field_name,
+      boost::shared_ptr<CommonData> elastic_common_data_ptr,
+      boost::shared_ptr<VectorDouble> coeff_expansion_ptr);
+
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
+
+private:
+  boost::shared_ptr<CommonData> elasticCommonDataPtr;
+  boost::shared_ptr<VectorDouble> coeffExpansionPtr;
+};
+
+template <int DIM, typename AssemblyDomainEleOp, int S>
+OpCalculateHenckyThermalStressdTImpl<DIM, GAUSS, AssemblyDomainEleOp, S>::
+    OpCalculateHenckyThermalStressdTImpl(
+        const std::string row_field_name, const std::string col_field_name,
+        boost::shared_ptr<CommonData> elastic_common_data_ptr,
+        boost::shared_ptr<VectorDouble> coeff_expansion_ptr)
+    : AssemblyDomainEleOp(row_field_name, col_field_name,
+                          AssemblyDomainEleOp::OPROWCOL),
+      elasticCommonDataPtr(elastic_common_data_ptr),
+      coeffExpansionPtr(coeff_expansion_ptr) {
+  this->sYmm = false;
+}
+
+template <int DIM, typename AssemblyDomainEleOp, int S>
+MoFEMErrorCode
+OpCalculateHenckyThermalStressdTImpl<DIM, GAUSS, AssemblyDomainEleOp, S>::
+    iNtegrate(EntitiesFieldData::EntData &row_data,
+              EntitiesFieldData::EntData &col_data) {
+  MoFEMFunctionBegin;
+
+  auto &locMat = AssemblyDomainEleOp::locMat;
+
+  const auto nb_integration_pts = row_data.getN().size1();
+  const auto nb_row_base_functions = row_data.getN().size2();
+  auto t_w = this->getFTensor0IntegrationWeight();
+
+  constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
+  auto t_row_diff_base = row_data.getFTensor1DiffN<DIM>();
+  auto t_D = getFTensor4DdgFromMat<DIM, DIM, 0>(*elasticCommonDataPtr->matDPtr);
+  auto t_grad =
+      getFTensor2FromMat<DIM, DIM>(*(elasticCommonDataPtr->matGradPtr));
+  auto t_logC_dC =
+      getFTensor4DdgFromMat<DIM, DIM>(elasticCommonDataPtr->matLogCdC);
+  FTensor::Tensor2_symmetric<double, DIM> t_eigen_strain;
+  FTensor::Tensor2<double, DIM, DIM> t_F;
+
+  FTensor::Index<'i', DIM> i;
+  FTensor::Index<'j', DIM> j;
+  FTensor::Index<'k', DIM> k;
+  FTensor::Index<'l', DIM> l;
+  FTensor::Index<'m', DIM> m;
+  FTensor::Index<'n', DIM> n;
+  FTensor::Index<'o', DIM> o;
+
+  auto t_coeff_exp = FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM>();
+  t_coeff_exp(i, j) = 0;
+  for (auto d = 0; d != SPACE_DIM; ++d) {
+    t_coeff_exp(d, d) = (*coeffExpansionPtr)[d];
+  }
+
+  t_eigen_strain(i, j) = (t_D(i, j, k, l) * t_coeff_exp(k, l));
+
+  for (auto gg = 0; gg != nb_integration_pts; ++gg) {
+
+    t_F(i, j) = t_grad(i, j) + t_kd(i, j);
+
+    double alpha = this->getMeasure() * t_w;
+    auto rr = 0;
+    for (; rr != AssemblyDomainEleOp::nbRows / DIM; ++rr) {
+      auto t_mat = getFTensor1FromMat<DIM, 1>(locMat, rr * DIM);
+      auto t_col_base = col_data.getFTensor0N(gg, 0);
+      for (auto cc = 0; cc != AssemblyDomainEleOp::nbCols; cc++) {
+#ifdef HENCKY_SMALL_STRAIN
+        t_mat(i) -=
+            (t_row_diff_base(j) * t_eigen_strain(i, j)) * (t_col_base * alpha);
+#else
+        t_mat(i) -= (t_row_diff_base(j) *
+                     (t_F(i, o) * ((t_D(m, n, k, l) * t_coeff_exp(k, l)) *
+                                   t_logC_dC(m, n, o, j)))) *
+                    (t_col_base * alpha);
+#endif
+
+        ++t_mat;
+        ++t_col_base;
+      }
+
+      ++t_row_diff_base;
+    }
+    for (; rr != nb_row_base_functions; ++rr)
+      ++t_row_diff_base;
+
+    ++t_w;
+    ++t_grad;
+    ++t_logC_dC;
+    ++t_D;
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 template <typename DomainEleOp> struct HenckyIntegrators {
   template <int DIM, IntegrationType I>
   using OpCalculateEigenVals = OpCalculateEigenValsImpl<DIM, I, DomainEleOp>;
@@ -552,7 +747,11 @@ template <typename DomainEleOp> struct HenckyIntegrators {
   using OpCalculateHenckyStress =
       OpCalculateHenckyStressImpl<DIM, I, DomainEleOp, S>;
 
-  template <int DIM, IntegrationType I, int S = 0>
+  template <int DIM, IntegrationType I, int S>
+  using OpCalculateHenckyThermalStress =
+      OpCalculateHenckyThermalStressImpl<DIM, I, DomainEleOp, S>;
+
+  template <int DIM, IntegrationType I, int S>
   using OpCalculateHenckyPlasticStress =
       OpCalculateHenckyPlasticStressImpl<DIM, I, DomainEleOp, S>;
 
@@ -562,6 +761,10 @@ template <typename DomainEleOp> struct HenckyIntegrators {
 
   template <int DIM, IntegrationType I, int S>
   using OpHenckyTangent = OpHenckyTangentImpl<DIM, GAUSS, DomainEleOp, S>;
+
+  template <int DIM, IntegrationType I, typename AssemblyDomainEleOp, int S>
+  using OpCalculateHenckyThermalStressdT =
+      OpCalculateHenckyThermalStressdTImpl<DIM, GAUSS, AssemblyDomainEleOp, S>;
 };
 
 template <int DIM>
@@ -573,14 +776,19 @@ addMatBlockOps(MoFEM::Interface &m_field,
                double scale = 1) {
   MoFEMFunctionBegin;
 
+  PetscBool plane_strain_flag = PETSC_FALSE;
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-plane_strain",
+                             &plane_strain_flag, PETSC_NULL);
+
   struct OpMatBlocks : public DomainEleOp {
     OpMatBlocks(boost::shared_ptr<MatrixDouble> m, double bulk_modulus_K,
                 double shear_modulus_G, MoFEM::Interface &m_field, Sev sev,
                 std::vector<const CubitMeshSets *> meshset_vec_ptr,
-                double scale)
+                double scale, PetscBool plane_strain_flag)
         : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE), matDPtr(m),
           bulkModulusKDefault(bulk_modulus_K),
-          shearModulusGDefault(shear_modulus_G), scaleYoungModulus(scale) {
+          shearModulusGDefault(shear_modulus_G), scaleYoungModulus(scale),
+          planeStrainFlag(plane_strain_flag) {
       CHK_THROW_MESSAGE(extractBlockData(m_field, meshset_vec_ptr, sev),
                         "Can not get data from block");
     }
@@ -593,19 +801,22 @@ addMatBlockOps(MoFEM::Interface &m_field,
 
         if (b.blockEnts.find(getFEEntityHandle()) != b.blockEnts.end()) {
           CHKERR getMatDPtr(matDPtr, b.bulkModulusK * scaleYoungModulus,
-                            b.shearModulusG * scaleYoungModulus);
+                            b.shearModulusG * scaleYoungModulus,
+                            planeStrainFlag);
           MoFEMFunctionReturnHot(0);
         }
       }
 
       CHKERR getMatDPtr(matDPtr, bulkModulusKDefault * scaleYoungModulus,
-                        shearModulusGDefault * scaleYoungModulus);
+                        shearModulusGDefault * scaleYoungModulus,
+                        planeStrainFlag);
       MoFEMFunctionReturn(0);
     }
 
   private:
     boost::shared_ptr<MatrixDouble> matDPtr;
     const double scaleYoungModulus;
+    const PetscBool planeStrainFlag;
 
     struct BlockData {
       double bulkModulusK;
@@ -654,7 +865,8 @@ addMatBlockOps(MoFEM::Interface &m_field,
     }
 
     MoFEMErrorCode getMatDPtr(boost::shared_ptr<MatrixDouble> mat_D_ptr,
-                              double bulk_modulus_K, double shear_modulus_G) {
+                              double bulk_modulus_K, double shear_modulus_G,
+                              PetscBool is_plane_strain) {
       MoFEMFunctionBegin;
       //! [Calculate elasticity tensor]
       auto set_material_stiffness = [&]() {
@@ -663,7 +875,7 @@ addMatBlockOps(MoFEM::Interface &m_field,
         FTensor::Index<'k', DIM> k;
         FTensor::Index<'l', DIM> l;
         constexpr auto t_kd = FTensor::Kronecker_Delta_symmetric<int>();
-        double A = (DIM == 2)
+        double A = (SPACE_DIM == 2 && !is_plane_strain)
                        ? 2 * shear_modulus_G /
                              (bulk_modulus_K + (4. / 3.) * shear_modulus_G)
                        : 1;
@@ -702,7 +914,7 @@ addMatBlockOps(MoFEM::Interface &m_field,
           (boost::format("%s(.*)") % block_name).str()
 
               )),
-      scale
+      scale, plane_strain_flag
 
       ));
 
@@ -789,8 +1001,8 @@ MoFEMErrorCode opFactoryDomainLhs(
 
   using H = HenckyIntegrators<DomainEleOp>;
   // Assumes constant D matrix per entity
-  pip.push_back(
-      new typename H::template OpHenckyTangent<DIM, I, 0>(field_name, common_ptr));
+  pip.push_back(new typename H::template OpHenckyTangent<DIM, I, 0>(
+      field_name, common_ptr));
   pip.push_back(
       new OpKPiola(field_name, field_name, common_ptr->getMatTangent()));
 

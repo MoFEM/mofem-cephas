@@ -10,7 +10,13 @@
   #define EXECUTABLE_DIMENSION 3
 #endif
 
+#ifndef FINITE_DEFORMATION_FLAG
+  #define FINITE_DEFORMATION_FLAG true
+#endif
+
 #include <MoFEM.hpp>
+#include <MatrixFunction.hpp>
+
 using namespace MoFEM;
 
 #include <ThermalConvection.hpp>
@@ -18,6 +24,9 @@ using namespace MoFEM;
 
 constexpr int SPACE_DIM =
     EXECUTABLE_DIMENSION; //< Space dimension of problem, mesh
+
+constexpr bool IS_LARGE_STRAINS =
+    FINITE_DEFORMATION_FLAG; //< Flag to turn off/on geometric nonlinearities
 
 using EntData = EntitiesFieldData::EntData;
 using DomainEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::DomainEle;
@@ -32,67 +41,22 @@ using SideEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::FaceSideEle;
 using AssemblyDomainEleOp =
     FormsIntegrators<DomainEleOp>::Assembly<PETSC>::OpBase;
 
+constexpr AssemblyType AT = AssemblyType::PETSC; //< selected assembly type
+constexpr IntegrationType IT =
+    IntegrationType::GAUSS; //< selected integration type
+
 //! [Linear elastic problem]
-using OpKCauchy = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::BiLinearForm<
-    GAUSS>::OpGradSymTensorGrad<1, SPACE_DIM, SPACE_DIM,
-                                0>; //< Elastic stiffness matrix
-using OpInternalForceCauchy =
-    FormsIntegrators<DomainEleOp>::Assembly<PETSC>::LinearForm<
-        GAUSS>::OpGradTimesSymTensor<1, SPACE_DIM,
-                                     SPACE_DIM>; //< Elastic internal forces
+#include <HenckyOps.hpp> // Include Hencky operators
+using namespace HenckyOps;
 //! [Linear elastic problem]
+
+// Include finite deformation operators
+#include <FiniteThermalOps.hpp> // Include operators for finite strain diffusion problem
+using namespace FiniteThermalOps;
 
 //! [Thermal problem]
-/**
- * @brief Integrate Lhs base of flux (1/k) base of flux (FLUX x FLUX)
- *
- */
-using OpHdivHdiv = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::BiLinearForm<
-    GAUSS>::OpMass<3, SPACE_DIM>;
-
-/**
- * @brief Integrate Lhs div of base of flux time base of temperature (FLUX x T)
- * and transpose of it, i.e. (T x FLAX)
- *
- */
-using OpHdivT = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::BiLinearForm<
-    GAUSS>::OpMixDivTimesScalar<SPACE_DIM>;
-
-/**
- * @brief Integrate Lhs base of temperature times (heat capacity) times base of
- * temperature (T x T)
- *
- */
-using OpCapacity = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::BiLinearForm<
-    GAUSS>::OpMass<1, 1>;
-
-/**
- * @brief Integrating Rhs flux base (1/k) flux  (FLUX)
- */
-using OpHdivFlux = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::LinearForm<
-    GAUSS>::OpBaseTimesVector<3, SPACE_DIM, 1>;
-
-/**
- * @brief  Integrate Rhs div flux base times temperature (T)
- *
- */
-using OpHDivTemp = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::LinearForm<
-    GAUSS>::OpMixDivTimesU<3, 1, SPACE_DIM>;
-
-/**
- * @brief Integrate Rhs base of temperature time heat capacity times heat rate
- * (T)
- *
- */
-using OpBaseDotT = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::LinearForm<
-    GAUSS>::OpBaseTimesScalar<1>;
-
-/**
- * @brief Integrate Rhs base of temperature times divergence of flux (T)
- *
- */
-using OpBaseDivFlux = OpBaseDotT;
-
+#include <ThermalOps.hpp> // Include operators for thermal problem which are agnostic to small/large strains
+using namespace ThermalOps;
 //! [Thermal problem]
 
 //! [Body and heat source]
@@ -122,12 +86,11 @@ using OpEssentialFluxLhs =
         GAUSS>::OpEssentialLhs<HeatFluxCubitBcData, 3, SPACE_DIM>;
 //! [Essential boundary conditions (Least square approach)]
 
+//! [Default input parameters]
 double default_young_modulus = 1;
 double default_poisson_ratio = 0.25;
-double ref_temp = 0.0;
-double init_temp = 0.0;
-
-PetscBool is_plane_strain = PETSC_FALSE;
+double default_ref_temp = 0.0;
+double default_init_temp = 0.0;
 
 double default_coeff_expansion = 1;
 double default_heat_conductivity =
@@ -145,6 +108,7 @@ int atom_test = 0;
 int save_every = 1; //< Save every n-th step
 PetscBool do_output_domain;
 PetscBool do_output_skin;
+//! [Default input parameters]
 
 #include <ThermoElasticOps.hpp>   //< additional coupling operators
 using namespace ThermoElasticOps; //< name space of coupling operators
@@ -190,21 +154,10 @@ private:
   MoFEMErrorCode OPs();       //< add operators to pipeline
   MoFEMErrorCode tsSolve();   //< time solver
 
-  struct BlockedParameters
-      : public boost::enable_shared_from_this<BlockedParameters> {
-    MatrixDouble mD;
-    VectorDouble coeffExpansion;
+  struct BlockedThermalParameters
+      : public boost::enable_shared_from_this<BlockedThermalParameters> {
     double heatConductivity;
     double heatCapacity;
-
-    inline auto getDPtr() {
-      return boost::shared_ptr<MatrixDouble>(shared_from_this(), &mD);
-    }
-
-    inline auto getCoeffExpansionPtr() {
-      return boost::shared_ptr<VectorDouble>(shared_from_this(),
-                                             &coeffExpansion);
-    }
 
     inline auto getHeatConductivityPtr() {
       return boost::shared_ptr<double>(shared_from_this(), &heatConductivity);
@@ -215,154 +168,168 @@ private:
     }
   };
 
-  MoFEMErrorCode addMatBlockOps(
-      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-      std::string block_elastic_name, std::string block_thermal_name,
-      boost::shared_ptr<BlockedParameters> blockedParamsPtr, Sev sev);
-};
+  struct BlockedThermoElasticParameters
+      : public boost::enable_shared_from_this<BlockedThermoElasticParameters> {
+    VectorDouble coeffExpansion;
+    double refTemp;
 
-MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
-    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-    std::string block_elastic_name, std::string block_thermal_name,
-    boost::shared_ptr<BlockedParameters> blockedParamsPtr, Sev sev) {
-  MoFEMFunctionBegin;
-
-  struct OpMatElasticBlocks : public DomainEleOp {
-    OpMatElasticBlocks(boost::shared_ptr<MatrixDouble> m, double bulk_modulus_K,
-                       double shear_modulus_G, MoFEM::Interface &m_field,
-                       Sev sev,
-                       std::vector<const CubitMeshSets *> meshset_vec_ptr)
-        : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE), matDPtr(m),
-          bulkModulusKDefault(bulk_modulus_K),
-          shearModulusGDefault(shear_modulus_G) {
-      CHK_THROW_MESSAGE(extractElasticBlockData(m_field, meshset_vec_ptr, sev),
-                        "Can not get data from block");
+    inline auto getCoeffExpansionPtr() {
+      return boost::shared_ptr<VectorDouble>(shared_from_this(),
+                                             &coeffExpansion);
     }
 
-    MoFEMErrorCode doWork(int side, EntityType type,
-                          EntitiesFieldData::EntData &data) {
-      MoFEMFunctionBegin;
-
-      for (auto &b : blockData) {
-
-        if (b.blockEnts.find(getFEEntityHandle()) != b.blockEnts.end()) {
-          CHKERR getMatDPtr(matDPtr, b.bulkModulusK, b.shearModulusG);
-          MoFEMFunctionReturnHot(0);
-        }
-      }
-
-      CHKERR getMatDPtr(matDPtr, bulkModulusKDefault, shearModulusGDefault);
-      MoFEMFunctionReturn(0);
-    }
-
-  private:
-    boost::shared_ptr<MatrixDouble> matDPtr;
-
-    struct BlockData {
-      double bulkModulusK;
-      double shearModulusG;
-      Range blockEnts;
-    };
-
-    double bulkModulusKDefault;
-    double shearModulusGDefault;
-    std::vector<BlockData> blockData;
-
-    MoFEMErrorCode
-    extractElasticBlockData(MoFEM::Interface &m_field,
-                            std::vector<const CubitMeshSets *> meshset_vec_ptr,
-                            Sev sev) {
-      MoFEMFunctionBegin;
-
-      for (auto m : meshset_vec_ptr) {
-        MOFEM_TAG_AND_LOG("WORLD", sev, "Mat Elastic Block") << *m;
-        std::vector<double> block_data;
-        CHKERR m->getAttributes(block_data);
-        if (block_data.size() < 2) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Expected that block has two attributes");
-        }
-        auto get_block_ents = [&]() {
-          Range ents;
-          CHKERR
-          m_field.get_moab().get_entities_by_handle(m->meshset, ents, true);
-          return ents;
-        };
-
-        double young_modulus = block_data[0];
-        double poisson_ratio = block_data[1];
-        double bulk_modulus_K = young_modulus / (3 * (1 - 2 * poisson_ratio));
-        double shear_modulus_G = young_modulus / (2 * (1 + poisson_ratio));
-
-        MOFEM_TAG_AND_LOG("WORLD", sev, "Mat Elastic Block")
-            << m->getName() << ": E = " << young_modulus
-            << " nu = " << poisson_ratio;
-
-        blockData.push_back(
-            {bulk_modulus_K, shear_modulus_G, get_block_ents()});
-      }
-      MOFEM_LOG_CHANNEL("WORLD");
-      MoFEMFunctionReturn(0);
-    }
-
-    MoFEMErrorCode getMatDPtr(boost::shared_ptr<MatrixDouble> mat_D_ptr,
-                              double bulk_modulus_K, double shear_modulus_G) {
-      MoFEMFunctionBegin;
-      //! [Calculate elasticity tensor]
-      auto set_material_stiffness = [&]() {
-        FTensor::Index<'i', SPACE_DIM> i;
-        FTensor::Index<'j', SPACE_DIM> j;
-        FTensor::Index<'k', SPACE_DIM> k;
-        FTensor::Index<'l', SPACE_DIM> l;
-        constexpr auto t_kd = FTensor::Kronecker_Delta_symmetric<int>();
-        double A = 1;
-        if (SPACE_DIM == 2 && !is_plane_strain) {
-          A = 2 * shear_modulus_G /
-              (bulk_modulus_K + (4. / 3.) * shear_modulus_G);
-        }
-        auto t_D = getFTensor4DdgFromMat<SPACE_DIM, SPACE_DIM, 0>(*mat_D_ptr);
-        t_D(i, j, k, l) =
-            2 * shear_modulus_G * ((t_kd(i, k) ^ t_kd(j, l)) / 4.) +
-            A * (bulk_modulus_K - (2. / 3.) * shear_modulus_G) * t_kd(i, j) *
-                t_kd(k, l);
-      };
-      //! [Calculate elasticity tensor]
-      constexpr auto size_symm = (SPACE_DIM * (SPACE_DIM + 1)) / 2;
-      mat_D_ptr->resize(size_symm * size_symm, 1);
-      set_material_stiffness();
-      MoFEMFunctionReturn(0);
+    inline auto getRefTempPtr() {
+      return boost::shared_ptr<double>(shared_from_this(), &refTemp);
     }
   };
 
-  double default_bulk_modulus_K =
-      default_young_modulus / (3 * (1 - 2 * default_poisson_ratio));
-  double default_shear_modulus_G =
-      default_young_modulus / (2 * (1 + default_poisson_ratio));
+  MoFEMErrorCode addMatThermalBlockOps(
+      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::string block_name,
+      boost::shared_ptr<BlockedThermalParameters> blockedParamsPtr, Sev sev);
 
-  pipeline.push_back(new OpMatElasticBlocks(
-      blockedParamsPtr->getDPtr(), default_bulk_modulus_K,
-      default_shear_modulus_G, mField, sev,
+  MoFEMErrorCode addMatThermoElasticBlockOps(
+      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::string block_name,
+      boost::shared_ptr<BlockedThermoElasticParameters> blockedParamsPtr,
+      Sev sev);
 
-      // Get blockset using regular expression
-      mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+  template <int DIM, AssemblyType A, IntegrationType I, typename DomainEleOp>
+  MoFEMErrorCode opThermoElasticFactoryDomainRhs(
+      MoFEM::Interface &m_field,
+      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
+      std::string field_name,
+      boost::shared_ptr<HenckyOps::CommonData> elastic_common_ptr,
+      boost::shared_ptr<ThermoElasticProblem::BlockedThermalParameters>
+          thermal_common_ptr,
+      boost::shared_ptr<ThermoElasticProblem::BlockedThermoElasticParameters>
+          thermoelastic_common_ptr,
+      Sev sev) {
+    MoFEMFunctionBegin;
 
-          (boost::format("%s(.*)") % block_elastic_name).str()
+    using B = typename FormsIntegrators<DomainEleOp>::template Assembly<
+        A>::template LinearForm<I>;
+    using H = HenckyOps::HenckyIntegrators<DomainEleOp>;
+    auto vec_temp_ptr = boost::make_shared<VectorDouble>();
+    pip.push_back(new OpCalculateScalarFieldValues("T", vec_temp_ptr));
+    auto coeff_expansion_ptr = thermoelastic_common_ptr->getCoeffExpansionPtr();
+    auto ref_temp_ptr = thermoelastic_common_ptr->getRefTempPtr();
+    pip.push_back(
+        new typename H::template OpCalculateHenckyThermalStress<DIM, I, 0>(
+            "U", vec_temp_ptr, elastic_common_ptr, coeff_expansion_ptr,
+            ref_temp_ptr));
+    using OpInternalForcePiola =
+        typename B::template OpGradTimesTensor<1, DIM, DIM>;
+    pip.push_back(new OpInternalForcePiola(
+        "U", elastic_common_ptr->getMatFirstPiolaStress()));
 
-              ))
+    MoFEMFunctionReturn(0);
+  }
 
-          ));
+  template <int DIM, AssemblyType A, IntegrationType I, typename DomainEleOp>
+  MoFEMErrorCode opThermoElasticFactoryDomainRhs(
+      MoFEM::Interface &m_field,
+      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
+      std::string field_name, std::string elastic_block_name,
+      std::string thermal_block_name, std::string thermoelastic_block_name,
+      Sev sev, double scale = 1) {
+    MoFEMFunctionBegin;
+
+    auto elastic_common_ptr = commonDataFactory<DIM, I, DomainEleOp>(
+        m_field, pip, field_name, elastic_block_name, sev, scale);
+    auto thermal_common_ptr = boost::make_shared<BlockedThermalParameters>();
+    CHKERR addMatThermalBlockOps(pip, thermal_block_name, thermal_common_ptr,
+                                 Sev::inform);
+    auto thermoelastic_common_ptr =
+        boost::make_shared<BlockedThermoElasticParameters>();
+    CHKERR addMatThermoElasticBlockOps(pip, thermoelastic_block_name,
+                                       thermoelastic_common_ptr, Sev::inform);
+    CHKERR opThermoElasticFactoryDomainRhs<DIM, A, I, DomainEleOp>(
+        m_field, pip, field_name, elastic_common_ptr, thermal_common_ptr,
+        thermoelastic_common_ptr, sev);
+
+    MoFEMFunctionReturn(0);
+  }
+
+  template <int DIM, AssemblyType A, IntegrationType I, typename DomainEleOp>
+  MoFEMErrorCode opThermoElasticFactoryDomainLhs(
+      MoFEM::Interface &m_field,
+      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
+      std::string field_name, std::string coupled_field_name,
+      boost::shared_ptr<HenckyOps::CommonData> elastic_common_ptr,
+      boost::shared_ptr<ThermoElasticProblem::BlockedThermalParameters>
+          thermal_common_ptr,
+      boost::shared_ptr<ThermoElasticProblem::BlockedThermoElasticParameters>
+          thermoelastic_common_ptr,
+      Sev sev) {
+    MoFEMFunctionBegin;
+
+    using B = typename FormsIntegrators<DomainEleOp>::template Assembly<
+        A>::template BiLinearForm<I>;
+    using OpKPiola = typename B::template OpGradTensorGrad<1, DIM, DIM, 1>;
+
+    using H = HenckyIntegrators<DomainEleOp>;
+    auto vec_temp_ptr = boost::make_shared<VectorDouble>();
+    pip.push_back(new OpCalculateScalarFieldValues("T", vec_temp_ptr));
+    auto coeff_expansion_ptr = thermoelastic_common_ptr->getCoeffExpansionPtr();
+    auto ref_temp_ptr = thermoelastic_common_ptr->getRefTempPtr();
+    pip.push_back(
+        new typename H::template OpCalculateHenckyThermalStress<DIM, I, 0>(
+            "U", vec_temp_ptr, elastic_common_ptr, coeff_expansion_ptr,
+            ref_temp_ptr));
+    pip.push_back(new typename H::template OpHenckyTangent<DIM, I, 0>(
+        field_name, elastic_common_ptr));
+    pip.push_back(new OpKPiola(field_name, field_name,
+                               elastic_common_ptr->getMatTangent()));
+    pip.push_back(new typename H::template OpCalculateHenckyThermalStressdT<
+                  DIM, I, AssemblyDomainEleOp, 0>(
+        field_name, coupled_field_name, elastic_common_ptr,
+        coeff_expansion_ptr));
+
+    MoFEMFunctionReturn(0);
+  }
+
+  template <int DIM, AssemblyType A, IntegrationType I, typename DomainEleOp>
+  MoFEMErrorCode opThermoElasticFactoryDomainLhs(
+      MoFEM::Interface &m_field,
+      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
+      std::string field_name, std::string coupled_field_name,
+      std::string elastic_block_name, std::string thermal_block_name,
+      std::string thermoelastic_block_name, Sev sev, double scale = 1) {
+    MoFEMFunctionBegin;
+
+    auto elastic_common_ptr = commonDataFactory<DIM, I, DomainEleOp>(
+        m_field, pip, field_name, elastic_block_name, sev, scale);
+    auto thermal_common_ptr = boost::make_shared<BlockedThermalParameters>();
+    CHKERR addMatThermalBlockOps(pip, thermal_block_name, thermal_common_ptr,
+                                 Sev::inform);
+    auto thermoelastic_common_ptr =
+        boost::make_shared<BlockedThermoElasticParameters>();
+    CHKERR addMatThermoElasticBlockOps(pip, thermoelastic_block_name,
+                                       thermoelastic_common_ptr, Sev::inform);
+    CHKERR opThermoElasticFactoryDomainLhs<DIM, A, I, DomainEleOp>(
+        m_field, pip, field_name, coupled_field_name, elastic_common_ptr,
+        thermal_common_ptr, thermoelastic_common_ptr, sev);
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
+MoFEMErrorCode ThermoElasticProblem::addMatThermalBlockOps(
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    std::string block_name,
+    boost::shared_ptr<BlockedThermalParameters> blockedParamsPtr, Sev sev) {
+  MoFEMFunctionBegin;
 
   struct OpMatThermalBlocks : public DomainEleOp {
-    OpMatThermalBlocks(boost::shared_ptr<VectorDouble> expansion_ptr,
-                       boost::shared_ptr<double> conductivity_ptr,
+    OpMatThermalBlocks(boost::shared_ptr<double> conductivity_ptr,
                        boost::shared_ptr<double> capacity_ptr,
                        MoFEM::Interface &m_field, Sev sev,
                        std::vector<const CubitMeshSets *> meshset_vec_ptr)
         : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE),
-          expansionPtr(expansion_ptr), conductivityPtr(conductivity_ptr),
-          capacityPtr(capacity_ptr) {
-      CHK_THROW_MESSAGE(extractThermallockData(m_field, meshset_vec_ptr, sev),
-                        "Can not get data from block");
+          conductivityPtr(conductivity_ptr), capacityPtr(capacity_ptr) {
+      CHK_THROW_MESSAGE(extractThermalBlockData(m_field, meshset_vec_ptr, sev),
+                        "Cannot get data from thermal block");
     }
 
     MoFEMErrorCode doWork(int side, EntityType type,
@@ -372,14 +339,12 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
       for (auto &b : blockData) {
 
         if (b.blockEnts.find(getFEEntityHandle()) != b.blockEnts.end()) {
-          *expansionPtr = b.expansion;
           *conductivityPtr = b.conductivity;
           *capacityPtr = b.capacity;
           MoFEMFunctionReturnHot(0);
         }
       }
 
-      *expansionPtr = VectorDouble(SPACE_DIM, default_coeff_expansion);
       *conductivityPtr = default_heat_conductivity;
       *capacityPtr = default_heat_capacity;
 
@@ -390,25 +355,121 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
     struct BlockData {
       double conductivity;
       double capacity;
-      VectorDouble expansion;
       Range blockEnts;
     };
 
     std::vector<BlockData> blockData;
 
     MoFEMErrorCode
-    extractThermallockData(MoFEM::Interface &m_field,
-                           std::vector<const CubitMeshSets *> meshset_vec_ptr,
-                           Sev sev) {
+    extractThermalBlockData(MoFEM::Interface &m_field,
+                            std::vector<const CubitMeshSets *> meshset_vec_ptr,
+                            Sev sev) {
       MoFEMFunctionBegin;
 
       for (auto m : meshset_vec_ptr) {
         MOFEM_TAG_AND_LOG("WORLD", sev, "Mat Thermal Block") << *m;
         std::vector<double> block_data;
         CHKERR m->getAttributes(block_data);
-        if (block_data.size() < 3) {
+        if (block_data.size() < 2) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Expected that block has at least three attributes");
+                  "Expected that block has at least two attributes");
+        }
+        auto get_block_ents = [&]() {
+          Range ents;
+          CHKERR
+          m_field.get_moab().get_entities_by_handle(m->meshset, ents, true);
+          return ents;
+        };
+
+        MOFEM_TAG_AND_LOG("WORLD", sev, "Mat Thermal Block")
+            << m->getName() << ": conductivity = " << block_data[0]
+            << " capacity  = " << block_data[1];
+
+        blockData.push_back({block_data[0], block_data[1], get_block_ents()});
+      }
+      MOFEM_LOG_CHANNEL("WORLD");
+      MoFEMFunctionReturn(0);
+    }
+
+    boost::shared_ptr<double> conductivityPtr;
+    boost::shared_ptr<double> capacityPtr;
+  };
+
+  pipeline.push_back(new OpMatThermalBlocks(
+      blockedParamsPtr->getHeatConductivityPtr(),
+      blockedParamsPtr->getHeatCapacityPtr(), mField, sev,
+
+      // Get blockset using regular expression
+      mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+
+          (boost::format("%s(.*)") % block_name).str()
+
+              ))
+
+          ));
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ThermoElasticProblem::addMatThermoElasticBlockOps(
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    std::string block_name,
+    boost::shared_ptr<BlockedThermoElasticParameters> blockedParamsPtr,
+    Sev sev) {
+  MoFEMFunctionBegin;
+
+  struct OpMatThermoElasticBlocks : public DomainEleOp {
+    OpMatThermoElasticBlocks(boost::shared_ptr<VectorDouble> expansion_ptr,
+                             boost::shared_ptr<double> ref_temp_ptr,
+                             MoFEM::Interface &m_field, Sev sev,
+                             std::vector<const CubitMeshSets *> meshset_vec_ptr)
+        : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE),
+          expansionPtr(expansion_ptr), refTempPtr(ref_temp_ptr) {
+      CHK_THROW_MESSAGE(
+          extractThermoElasticBlockData(m_field, meshset_vec_ptr, sev),
+          "Cannot get data from thermoelastic block");
+    }
+
+    MoFEMErrorCode doWork(int side, EntityType type,
+                          EntitiesFieldData::EntData &data) {
+      MoFEMFunctionBegin;
+
+      for (auto &b : blockData) {
+
+        if (b.blockEnts.find(getFEEntityHandle()) != b.blockEnts.end()) {
+          *expansionPtr = b.expansion;
+          *refTempPtr = b.ref_temp;
+          MoFEMFunctionReturnHot(0);
+        }
+      }
+
+      *expansionPtr = VectorDouble(SPACE_DIM, default_coeff_expansion);
+      *refTempPtr = default_ref_temp;
+
+      MoFEMFunctionReturn(0);
+    }
+
+  private:
+    struct BlockData {
+      double ref_temp;
+      VectorDouble expansion;
+      Range blockEnts;
+    };
+
+    std::vector<BlockData> blockData;
+
+    MoFEMErrorCode extractThermoElasticBlockData(
+        MoFEM::Interface &m_field,
+        std::vector<const CubitMeshSets *> meshset_vec_ptr, Sev sev) {
+      MoFEMFunctionBegin;
+
+      for (auto m : meshset_vec_ptr) {
+        MOFEM_TAG_AND_LOG("WORLD", sev, "Mat Thermoelastic Block") << *m;
+        std::vector<double> block_data;
+        CHKERR m->getAttributes(block_data);
+        if (block_data.size() < 2) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Expected that block has at least two attributes");
         }
         auto get_block_ents = [&]() {
           Range ents;
@@ -418,44 +479,40 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
         };
 
         auto get_expansion = [&]() {
-          VectorDouble expansion(SPACE_DIM, block_data[2]);
-          if (block_data.size() > 3) {
-            expansion[1] = block_data[3];
+          VectorDouble expansion(SPACE_DIM, block_data[1]);
+          if (block_data.size() > 2) {
+            expansion[1] = block_data[2];
           }
-          if (SPACE_DIM == 3 && block_data.size() > 4) {
-            expansion[2] = block_data[4];
+          if (SPACE_DIM == 3 && block_data.size() > 3) {
+            expansion[2] = block_data[3];
           }
           return expansion;
         };
 
         auto coeff_exp_vec = get_expansion();
 
-        MOFEM_TAG_AND_LOG("WORLD", sev, "Mat Thermal Block")
-            << m->getName() << ": conductivity = " << block_data[0]
-            << " capacity  = " << block_data[1]
+        MOFEM_TAG_AND_LOG("WORLD", sev, "Mat Thermoelastic Block")
+            << " ref_temp = " << block_data[0]
             << " expansion = " << coeff_exp_vec;
 
-        blockData.push_back(
-            {block_data[0], block_data[1], coeff_exp_vec, get_block_ents()});
+        blockData.push_back({block_data[0], coeff_exp_vec, get_block_ents()});
       }
       MOFEM_LOG_CHANNEL("WORLD");
       MoFEMFunctionReturn(0);
     }
 
     boost::shared_ptr<VectorDouble> expansionPtr;
-    boost::shared_ptr<double> conductivityPtr;
-    boost::shared_ptr<double> capacityPtr;
+    boost::shared_ptr<double> refTempPtr;
   };
 
-  pipeline.push_back(new OpMatThermalBlocks(
+  pipeline.push_back(new OpMatThermoElasticBlocks(
       blockedParamsPtr->getCoeffExpansionPtr(),
-      blockedParamsPtr->getHeatConductivityPtr(),
-      blockedParamsPtr->getHeatCapacityPtr(), mField, sev,
+      blockedParamsPtr->getRefTempPtr(), mField, sev,
 
       // Get blockset using regular expression
       mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
 
-          (boost::format("%s(.*)") % block_thermal_name).str()
+          (boost::format("%s(.*)") % block_name).str()
 
               ))
 
@@ -502,14 +559,12 @@ MoFEMErrorCode ThermoElasticProblem::getCommandLineParameters() {
                                  &default_young_modulus, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-poisson_ratio",
                                  &default_poisson_ratio, PETSC_NULL);
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-plane_strain",
-                               &is_plane_strain, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-coeff_expansion",
                                  &default_coeff_expansion, PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-ref_temp", &ref_temp,
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-ref_temp", &default_ref_temp,
                                  PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-init_temp", &init_temp,
-                                 PETSC_NULL);
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-init_temp",
+                                 &default_init_temp, PETSC_NULL);
 
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-capacity",
                                  &default_heat_capacity, PETSC_NULL);
@@ -530,20 +585,20 @@ MoFEMErrorCode ThermoElasticProblem::getCommandLineParameters() {
                                PETSC_NULL);
 
     MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Default Young's modulus " << default_young_modulus;
+        << "Young's modulus " << default_young_modulus;
     MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "DefaultPoisson ratio " << default_poisson_ratio;
+        << "Poisson's ratio " << default_poisson_ratio;
     MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Default coeff of expansion " << default_coeff_expansion;
+        << "Coeff of expansion " << default_coeff_expansion;
     MOFEM_LOG("ThermoElastic", Sev::inform)
         << "Default heat capacity " << default_heat_capacity;
     MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Default heat conductivity " << default_heat_conductivity;
+        << "Heat conductivity " << default_heat_conductivity;
 
     MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Reference temperature  " << ref_temp;
+        << "Reference temperature  " << default_ref_temp;
     MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Initial temperature  " << init_temp;
+        << "Initial temperature  " << default_init_temp;
 
     MoFEMFunctionReturn(0);
   };
@@ -602,15 +657,30 @@ MoFEMErrorCode ThermoElasticProblem::setupProblem() {
     auto field_eval_fe_ptr = fieldEvalData->feMethodPtr.lock();
     field_eval_fe_ptr->getRuleHook = no_rule;
 
-    auto block_params = boost::make_shared<BlockedParameters>();
-    auto mDPtr = block_params->getDPtr();
-    auto coeff_expansion_ptr = block_params->getCoeffExpansionPtr();
+    auto block_thermal_params = boost::make_shared<BlockedThermalParameters>();
+    auto block_thermoelastic_params =
+        boost::make_shared<BlockedThermoElasticParameters>();
+    auto coeff_expansion_ptr =
+        block_thermoelastic_params->getCoeffExpansionPtr();
+    auto ref_temp_ptr = block_thermoelastic_params->getRefTempPtr();
 
-    CHKERR addMatBlockOps(field_eval_fe_ptr->getOpPtrVector(), "MAT_ELASTIC",
-                          "MAT_THERMAL", block_params, Sev::verbose);
+    CHKERR addMatThermalBlockOps(field_eval_fe_ptr->getOpPtrVector(),
+                                 "MAT_THERMAL", block_thermal_params,
+                                 Sev::verbose);
+    CHKERR addMatThermoElasticBlockOps(
+        field_eval_fe_ptr->getOpPtrVector(), "MAT_THERMOELASTIC",
+        block_thermoelastic_params, Sev::verbose);
 
     CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
         field_eval_fe_ptr->getOpPtrVector(), {H1, HDIV});
+
+    auto hencky_common_data_ptr =
+        HenckyOps::commonDataFactory<SPACE_DIM, IT, DomainEleOp>(
+            mField, field_eval_fe_ptr->getOpPtrVector(), "U", "MAT_ELASTIC",
+            Sev::inform);
+    auto mat_D_ptr = hencky_common_data_ptr->matDPtr;
+    auto dispGradPtr = hencky_common_data_ptr->matGradPtr;
+    auto mat_stress_ptr = boost::make_shared<MatrixDouble>();
 
     field_eval_fe_ptr->getOpPtrVector().push_back(
         new OpCalculateScalarFieldValues("T", tempFieldPtr));
@@ -621,11 +691,28 @@ MoFEMErrorCode ThermoElasticProblem::setupProblem() {
     field_eval_fe_ptr->getOpPtrVector().push_back(
         new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U",
                                                                  dispGradPtr));
+
+    using H = HenckyOps::HenckyIntegrators<DomainEleOp>;
+
     field_eval_fe_ptr->getOpPtrVector().push_back(
-        new OpSymmetrizeTensor<SPACE_DIM>(dispGradPtr, strainFieldPtr));
-    field_eval_fe_ptr->getOpPtrVector().push_back(
-        new OpStressThermal(strainFieldPtr, tempFieldPtr, mDPtr,
-                            coeff_expansion_ptr, stressFieldPtr));
+        new
+        typename H::template OpCalculateHenckyThermalStress<SPACE_DIM, IT, 0>(
+            "U", tempFieldPtr, hencky_common_data_ptr, coeff_expansion_ptr,
+            ref_temp_ptr));
+    if (!IS_LARGE_STRAINS) {
+      field_eval_fe_ptr->getOpPtrVector().push_back(
+          new OpSymmetrizeTensor<SPACE_DIM>(
+              hencky_common_data_ptr->getMatFirstPiolaStress(),
+              stressFieldPtr));
+      field_eval_fe_ptr->getOpPtrVector().push_back(
+          new OpSymmetrizeTensor<SPACE_DIM>(dispGradPtr, strainFieldPtr));
+    } else {
+      field_eval_fe_ptr->getOpPtrVector().push_back(
+          new typename H::template OpCalculateLogC<SPACE_DIM, IT>(
+              "U", hencky_common_data_ptr));
+      stressFieldPtr = hencky_common_data_ptr->getMatFirstPiolaStress();
+      strainFieldPtr = hencky_common_data_ptr->getMatLogC();
+    };
   }
 
   MoFEMFunctionReturn(0);
@@ -742,7 +829,7 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
       simple->getProblemName(), "TBC", remove_temp_bc_ents);
 
   auto set_init_temp = [](boost::shared_ptr<FieldEntity> field_entity_ptr) {
-    field_entity_ptr->getEntFieldData()[0] = init_temp;
+    field_entity_ptr->getEntFieldData()[0] = default_init_temp;
     return 0;
   };
   CHKERR mField.getInterface<FieldBlas>()->fieldLambdaOnEntities(set_init_temp,
@@ -779,11 +866,14 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
   CHKERR pipeline_mng->setBoundaryRhsIntegrationRule(integration_rule);
   CHKERR pipeline_mng->setBoundaryLhsIntegrationRule(integration_rule);
 
-  auto block_params = boost::make_shared<BlockedParameters>();
-  auto mDPtr = block_params->getDPtr();
-  auto coeff_expansion_ptr = block_params->getCoeffExpansionPtr();
-  auto heat_conductivity_ptr = block_params->getHeatConductivityPtr();
-  auto heat_capacity_ptr = block_params->getHeatCapacityPtr();
+  auto block_thermal_params = boost::make_shared<BlockedThermalParameters>();
+  auto heat_conductivity_ptr = block_thermal_params->getHeatConductivityPtr();
+  auto heat_capacity_ptr = block_thermal_params->getHeatCapacityPtr();
+
+  auto block_thermoelastic_params =
+      boost::make_shared<BlockedThermoElasticParameters>();
+  auto coeff_expansion_ptr = block_thermoelastic_params->getCoeffExpansionPtr();
+  auto ref_temp_ptr = block_thermoelastic_params->getRefTempPtr();
 
   // Default time scaling of BCs and sources, from command line arguments
   auto time_scale =
@@ -811,11 +901,17 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
 
   auto add_domain_rhs_ops = [&](auto &pipeline) {
     MoFEMFunctionBegin;
-    CHKERR addMatBlockOps(pipeline, "MAT_ELASTIC", "MAT_THERMAL", block_params,
-                          Sev::inform);
+    CHKERR addMatThermalBlockOps(pipeline, "MAT_THERMAL", block_thermal_params,
+                                 Sev::inform);
+    CHKERR addMatThermoElasticBlockOps(pipeline, "MAT_THERMOELASTIC",
+                                       block_thermoelastic_params, Sev::inform);
     CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pipeline, {H1, HDIV});
 
-    auto mat_grad_ptr = boost::make_shared<MatrixDouble>();
+    auto hencky_common_data_ptr =
+        HenckyOps::commonDataFactory<SPACE_DIM, IT, DomainEleOp>(
+            mField, pipeline, "U", "MAT_ELASTIC", Sev::inform);
+    auto mat_D_ptr = hencky_common_data_ptr->matDPtr;
+    auto mat_grad_ptr = hencky_common_data_ptr->matGradPtr;
     auto mat_strain_ptr = boost::make_shared<MatrixDouble>();
     auto mat_stress_ptr = boost::make_shared<MatrixDouble>();
 
@@ -832,17 +928,9 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
     pipeline.push_back(
         new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", mat_flux_ptr));
 
-    pipeline.push_back(new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
-        "U", mat_grad_ptr));
-    pipeline.push_back(
-        new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
-    pipeline.push_back(new OpStressThermal(mat_strain_ptr, vec_temp_ptr, mDPtr,
-                                           coeff_expansion_ptr,
-                                           mat_stress_ptr));
-
-    pipeline.push_back(new OpInternalForceCauchy(
-        "U", mat_stress_ptr,
-        [](double, double, double) constexpr { return 1; }));
+    CHKERR opThermoElasticFactoryDomainRhs<SPACE_DIM, AT, IT, DomainEleOp>(
+        mField, pipeline, "U", "MAT_ELASTIC", "MAT_THERMAL",
+        "MAT_THERMOELASTIC", Sev::inform);
 
     auto resistance = [heat_conductivity_ptr](const double, const double,
                                               const double) {
@@ -856,7 +944,8 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
     auto unity = [](const double, const double, const double) constexpr {
       return -1.;
     };
-    pipeline.push_back(new OpHdivFlux("FLUX", mat_flux_ptr, resistance));
+    pipeline.push_back(
+        new OpHdivFlux("FLUX", mat_flux_ptr, resistance, mat_grad_ptr));
     pipeline.push_back(new OpHDivTemp("FLUX", vec_temp_ptr, unity));
     pipeline.push_back(new OpBaseDivFlux("T", vec_temp_div_ptr, unity));
     pipeline.push_back(new OpBaseDotT("T", vec_temp_dot_ptr, capacity));
@@ -876,13 +965,18 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
 
   auto add_domain_lhs_ops = [&](auto &pipeline) {
     MoFEMFunctionBegin;
-    CHKERR addMatBlockOps(pipeline, "MAT_ELASTIC", "MAT_THERMAL", block_params,
-                          Sev::verbose);
+    CHKERR addMatThermalBlockOps(pipeline, "MAT_THERMAL", block_thermal_params,
+                                 Sev::verbose);
+    CHKERR addMatThermoElasticBlockOps(pipeline, "MAT_THERMOELASTIC",
+                                       block_thermoelastic_params,
+                                       Sev::verbose);
     CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pipeline, {H1, HDIV});
 
-    pipeline.push_back(new OpKCauchy("U", "U", mDPtr));
-    pipeline.push_back(new ThermoElasticOps::OpKCauchyThermoElasticity(
-        "U", "T", mDPtr, coeff_expansion_ptr));
+    auto hencky_common_data_ptr =
+        HenckyOps::commonDataFactory<SPACE_DIM, IT, DomainEleOp>(
+            mField, pipeline, "U", "MAT_ELASTIC", Sev::inform, 1);
+    auto mat_D_ptr = hencky_common_data_ptr->matDPtr;
+    auto mat_grad_ptr = hencky_common_data_ptr->matGradPtr;
 
     auto resistance = [heat_conductivity_ptr](const double, const double,
                                               const double) {
@@ -892,9 +986,21 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
                                         const double) {
       return -(*heat_capacity_ptr);
     };
-    pipeline.push_back(new OpHdivHdiv("FLUX", "FLUX", resistance));
+    pipeline.push_back(
+        new OpHdivHdiv("FLUX", "FLUX", resistance, mat_grad_ptr));
     pipeline.push_back(
         new OpHdivT("FLUX", "T", []() constexpr { return -1; }, true));
+
+    auto mat_flux_ptr = boost::make_shared<MatrixDouble>();
+    pipeline.push_back(
+        new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", mat_flux_ptr));
+
+    pipeline.push_back(
+        new OpHdivU("FLUX", "U", mat_flux_ptr, resistance, mat_grad_ptr));
+
+    CHKERR opThermoElasticFactoryDomainLhs<SPACE_DIM, AT, IT, DomainEleOp>(
+        mField, pipeline, "U", "T", "MAT_ELASTIC", "MAT_THERMAL",
+        "MAT_THERMOELASTIC", Sev::inform);
 
     auto op_capacity = new OpCapacity("T", "T", capacity);
     op_capacity->feScalingFun = [](const FEMethod *fe_ptr) {
@@ -1199,9 +1305,14 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
   };
 
   auto create_post_process_elements = [&]() {
-    auto block_params = boost::make_shared<BlockedParameters>();
-    auto mDPtr = block_params->getDPtr();
-    auto coeff_expansion_ptr = block_params->getCoeffExpansionPtr();
+    auto block_thermal_params = boost::make_shared<BlockedThermalParameters>();
+
+    auto block_thermoelastic_params =
+        boost::make_shared<BlockedThermoElasticParameters>();
+    auto coeff_expansion_ptr =
+        block_thermoelastic_params->getCoeffExpansionPtr();
+    auto ref_temp_ptr = block_thermoelastic_params->getRefTempPtr();
+
     auto u_ptr = boost::make_shared<MatrixDouble>();
     auto mat_grad_ptr = boost::make_shared<MatrixDouble>();
     auto mat_strain_ptr = boost::make_shared<MatrixDouble>();
@@ -1213,8 +1324,10 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
       MoFEMFunctionBegin;
       auto &pip = pp_fe->getOpPtrVector();
 
-      CHKERR addMatBlockOps(pip, "MAT_ELASTIC", "MAT_THERMAL", block_params,
-                            Sev::verbose);
+      CHKERR addMatThermalBlockOps(pip, "MAT_THERMAL", block_thermal_params,
+                                   Sev::verbose);
+      CHKERR addMatThermoElasticBlockOps(
+          pip, "MAT_THERMOELASTIC", block_thermoelastic_params, Sev::verbose);
 
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV});
 
@@ -1225,10 +1338,24 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
       pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
       pip.push_back(new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
           "U", mat_grad_ptr));
+      auto elastic_common_ptr = commonDataFactory<SPACE_DIM, IT, DomainEleOp>(
+          mField, pip, "U", "MAT_ELASTIC", Sev::inform);
+      using H = HenckyOps::HenckyIntegrators<DomainEleOp>;
       pip.push_back(
-          new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
-      pip.push_back(new OpStressThermal(mat_strain_ptr, vec_temp_ptr, mDPtr,
-                                        coeff_expansion_ptr, mat_stress_ptr));
+          new
+          typename H::template OpCalculateHenckyThermalStress<SPACE_DIM, IT, 0>(
+              "U", vec_temp_ptr, elastic_common_ptr, coeff_expansion_ptr,
+              ref_temp_ptr));
+      if (!IS_LARGE_STRAINS) {
+        pip.push_back(new OpSymmetrizeTensor<SPACE_DIM>(
+            elastic_common_ptr->getMatFirstPiolaStress(), mat_stress_ptr));
+        pip.push_back(
+            new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
+      } else {
+        mat_stress_ptr = elastic_common_ptr->getMatFirstPiolaStress();
+        mat_strain_ptr = elastic_common_ptr->getMatLogC();
+      }
+
       MoFEMFunctionReturn(0);
     };
 
@@ -1237,23 +1364,44 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
       auto &pip = pp_fe->getOpPtrVector();
       using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
 
-      pip.push_back(
+      if (!IS_LARGE_STRAINS) {
+        pip.push_back(
 
-          new OpPPMap(
+            new OpPPMap(
 
-              pp_fe->getPostProcMesh(), pp_fe->getMapGaussPts(),
+                pp_fe->getPostProcMesh(), pp_fe->getMapGaussPts(),
 
-              {{"T", vec_temp_ptr}},
+                {{"T", vec_temp_ptr}},
 
-              {{"U", u_ptr}, {"FLUX", mat_flux_ptr}},
+                {{"U", u_ptr}, {"FLUX", mat_flux_ptr}},
 
-              {},
+                {},
 
-              {{"STRAIN", mat_strain_ptr}, {"STRESS", mat_stress_ptr}}
+                {{"CAUCHY", mat_stress_ptr}, {"STRAIN", mat_strain_ptr}}
 
-              )
+                )
 
-      );
+        );
+      } else {
+        pip.push_back(
+
+            new OpPPMap(
+
+                pp_fe->getPostProcMesh(), pp_fe->getMapGaussPts(),
+
+                {{"T", vec_temp_ptr}},
+
+                {{"U", u_ptr}, {"FLUX", mat_flux_ptr}},
+
+                {{"PIOLA", mat_stress_ptr}},
+
+                {{"HENCKY_STRAIN", mat_strain_ptr}}
+
+                )
+
+        );
+      }
+
       MoFEMFunctionReturn(0);
     };
 
@@ -1357,6 +1505,11 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
                        "atom test %d failed: wrong temperature value",
                        atom_test);
             }
+            if (atom_test == 5 && fabs(t_temp - 1) > 1e-2) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong temperature value",
+                       atom_test);
+            }
           }
         }
         if (fluxFieldPtr->size1()) {
@@ -1371,6 +1524,10 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
                        "atom test %d failed: wrong flux value", atom_test);
             }
             if (atom_test == 4 && fabs(flux_mag - 150e3) > 1e-1) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong flux value", atom_test);
+            }
+            if (atom_test == 5 && fabs(flux_mag) > 1e-6) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong flux value", atom_test);
             }
@@ -1394,6 +1551,13 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
                        "atom test %d failed: wrong displacement value",
                        atom_test);
             }
+            if ((atom_test == 5) &&
+                fabs(t_disp(0) - (std::sqrt(std::exp(0.2)) - 1)) > 1e-5 &&
+                fabs(t_disp(1) - (std::sqrt(std::exp(0.2)) - 1)) > 1e-5) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong displacement value",
+                       atom_test);
+            }
           }
         }
         if (strainFieldPtr->size1()) {
@@ -1411,24 +1575,40 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong strain value", atom_test);
             }
+            if ((atom_test == 5) && fabs(t_strain_trace - 0.2) > 1e-5) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong strain value", atom_test);
+            }
           }
         }
         if (stressFieldPtr->size1()) {
-          auto t_stress =
-              getFTensor2SymmetricFromMat<SPACE_DIM>(*stressFieldPtr);
-          auto von_mises_stress = std::sqrt(
-              0.5 *
-              ((t_stress(0, 0) - t_stress(1, 1)) *
-                   (t_stress(0, 0) - t_stress(1, 1)) +
-               (SPACE_DIM == 3 ? (t_stress(1, 1) - t_stress(2, 2)) *
-                                     (t_stress(1, 1) - t_stress(2, 2))
-                               : 0) +
-               (SPACE_DIM == 3 ? (t_stress(2, 2) - t_stress(0, 0)) *
-                                     (t_stress(2, 2) - t_stress(0, 0))
-                               : 0) +
-               6 * (t_stress(0, 1) * t_stress(0, 1) +
-                    (SPACE_DIM == 3 ? t_stress(1, 2) * t_stress(1, 2) : 0) +
-                    (SPACE_DIM == 3 ? t_stress(2, 0) * t_stress(2, 0) : 0))));
+          double von_mises_stress;
+          auto getVonMisesStress = [&](auto t_stress) {
+            MoFEMFunctionBegin;
+            von_mises_stress = std::sqrt(
+                0.5 *
+                ((t_stress(0, 0) - t_stress(1, 1)) *
+                     (t_stress(0, 0) - t_stress(1, 1)) +
+                 (SPACE_DIM == 3 ? (t_stress(1, 1) - t_stress(2, 2)) *
+                                       (t_stress(1, 1) - t_stress(2, 2))
+                                 : 0) +
+                 (SPACE_DIM == 3 ? (t_stress(2, 2) - t_stress(0, 0)) *
+                                       (t_stress(2, 2) - t_stress(0, 0))
+                                 : 0) +
+                 6 * (t_stress(0, 1) * t_stress(0, 1) +
+                      (SPACE_DIM == 3 ? t_stress(1, 2) * t_stress(1, 2) : 0) +
+                      (SPACE_DIM == 3 ? t_stress(2, 0) * t_stress(2, 0) : 0))));
+            MoFEMFunctionReturn(0);
+          };
+          if (!IS_LARGE_STRAINS) {
+            auto t_stress =
+                getFTensor2SymmetricFromMat<SPACE_DIM>(*stressFieldPtr);
+            CHKERR getVonMisesStress(t_stress);
+          } else {
+            auto t_stress =
+                getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(*stressFieldPtr);
+            CHKERR getVonMisesStress(t_stress);
+          }
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point von Mises Stress: " << von_mises_stress;
           if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
@@ -1443,6 +1623,11 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
                        atom_test);
             }
             if (atom_test == 3 && fabs(von_mises_stress - 14.9) > 5e-2) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong von Mises stress value",
+                       atom_test);
+            }
+            if (atom_test == 5 && fabs(von_mises_stress) > 5e-2) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong von Mises stress value",
                        atom_test);

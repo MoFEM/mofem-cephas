@@ -318,7 +318,7 @@ struct GetFTensor2SymmetricFromMatImpl<2, S, T, L, A> {
 #ifndef NDEBUG
     if (data.size1() != 3)
       THROW_MESSAGE(
-          "getFTensor2SymmetricFromMat<2>: wrong size of data matrix, numer "
+          "getFTensor2SymmetricFromMat<2>: wrong size of data matrix, number "
           "of rows should be 3 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 #endif

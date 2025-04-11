@@ -36,6 +36,7 @@ struct OpStressThermal : public DomainEleOp {
                   boost::shared_ptr<VectorDouble> temp_ptr,
                   boost::shared_ptr<MatrixDouble> m_D_ptr,
                   boost::shared_ptr<VectorDouble> coeff_expansion_ptr,
+                  boost::shared_ptr<double> ref_temp_ptr,
                   boost::shared_ptr<MatrixDouble> stress_ptr);
 
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data);
@@ -45,6 +46,7 @@ private:
   boost::shared_ptr<VectorDouble> tempPtr;
   boost::shared_ptr<MatrixDouble> mDPtr;
   boost::shared_ptr<VectorDouble> coeffExpansionPtr;
+  boost::shared_ptr<double> refTempPtr;
   boost::shared_ptr<MatrixDouble> stressPtr;
 };
 
@@ -130,10 +132,11 @@ OpStressThermal::OpStressThermal(
     boost::shared_ptr<VectorDouble> temp_ptr,
     boost::shared_ptr<MatrixDouble> m_D_ptr,
     boost::shared_ptr<VectorDouble> coeff_expansion_ptr,
+    boost::shared_ptr<double> ref_temp_ptr,
     boost::shared_ptr<MatrixDouble> stress_ptr)
     : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE), strainPtr(strain_ptr),
       tempPtr(temp_ptr), mDPtr(m_D_ptr), coeffExpansionPtr(coeff_expansion_ptr),
-      stressPtr(stress_ptr) {}
+      refTempPtr(ref_temp_ptr), stressPtr(stress_ptr) {}
 
 //! [Calculate stress]
 MoFEMErrorCode OpStressThermal::doWork(int side, EntityType type,
@@ -159,8 +162,9 @@ MoFEMErrorCode OpStressThermal::doWork(int side, EntityType type,
   }
 
   for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
-    t_stress(i, j) = t_D(i, j, k, l) *
-                     (t_strain(k, l) - t_coeff_exp(k, l) * (t_temp - ref_temp));
+    t_stress(i, j) =
+        t_D(i, j, k, l) *
+        (t_strain(k, l) - t_coeff_exp(k, l) * (t_temp - (*refTempPtr)));
     ++t_strain;
     ++t_stress;
     ++t_temp;

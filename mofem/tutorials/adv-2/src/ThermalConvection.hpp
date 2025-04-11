@@ -4,9 +4,6 @@
  * @brief Implementation of thermal convection bc
  * @version 0.14.0
  * @date 2024-08-23
- *
- * @copyright Copyright (c) 2024
- *
  */
 
 namespace ThermoElasticOps {
