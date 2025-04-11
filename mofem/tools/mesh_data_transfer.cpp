@@ -374,12 +374,13 @@ int main(int argc, char *argv[]) {
       MPI_Allreduce(&data_integ[0], &global_data_integ[0], interp_tag_len,
                     MPI_DOUBLE, MPI_SUM, m_field.get_comm());
 
-      MOFEM_LOG("WORLD", Sev::inform)
-          << "Integrated stress for sslv116 test: " << global_data_integ[0]
-          << " " << global_data_integ[1] << " " << global_data_integ[2] << " "
-          << global_data_integ[3] << " " << global_data_integ[4] << " "
-          << global_data_integ[5] << " " << global_data_integ[6] << " "
-          << global_data_integ[7] << " " << global_data_integ[8];
+      std::string temp = "Integrated stress for sslv116 test: ";
+      for (int i = 0; i < 9; ++i) {
+        std::stringstream ss;
+        ss << std::scientific << std::setprecision(3) << global_data_integ[i];
+        temp += ss.str() + " ";
+      }
+      MOFEM_LOG("WORLD", Sev::inform) << temp;
 
       double non_zero_val = 1.655e12;
       double non_zero_tol = 4e-3;
