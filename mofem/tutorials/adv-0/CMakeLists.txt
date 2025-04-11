@@ -99,7 +99,7 @@ add_test(
   -scale 1
   -hardening_viscous 0
   -cn0 1 -ksp_monitor 
-  -log_summary
+  -log_view
   -log_no_color)
 
 add_test(
@@ -118,5 +118,25 @@ add_test(
   -hardening_viscous 0
   -cn0 1 -ksp_monitor 
   -pc_type lu
-  -log_summary
+  -log_view
+  -log_no_color)
+
+  add_test(
+  plastic_2d_uniaxial_tension
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  plastic_2d 
+  -file_name coarse_plastic_square_tension_2p.h5m
+  -ts_dt 0.02
+  -ts_max_time 0.5
+  -ts_max_steps 25
+  -ts_type theta
+  -snes_atol 1e-9
+  -order 2
+  -large_strains 1
+  -scale 1
+  -hardening_viscous 0
+  -cn0 1 -ksp_monitor 
+  -field_eval_coords 0,0,0
+  -atom_test 1
+  -log_view
   -log_no_color)

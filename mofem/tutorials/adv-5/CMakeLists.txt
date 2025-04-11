@@ -35,7 +35,7 @@ set_target_properties(
   seepage_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")
 
 add_test(
-  contact_2d
+  seepage_2d
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   seepage_2d
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/test_seepage.cub

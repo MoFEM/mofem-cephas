@@ -1552,9 +1552,9 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcForceMeshsetType<BLOCKSET>>(
                                                        bc->bcEnts, true);
 
       CHKERR m->getAttributes(bc->bcAttributes);
-      if (bc->bcAttributes.size() != 3) {
+      if (bc->bcAttributes.size() < 3) {
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                "Expect three block attributes for force block");
+                "At least three block attributes for force block are expected");
       }
 
       bc->forceBcPtr = boost::make_shared<ForceCubitBcData>();

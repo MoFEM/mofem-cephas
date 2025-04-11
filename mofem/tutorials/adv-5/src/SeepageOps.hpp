@@ -48,8 +48,6 @@ public:
       // get base function
       auto t_base_diff = data.getFTensor1DiffN<DIM>();
 
-      constexpr double g_acceleration = 9.81;
-
       FTensor::Index<'i', DIM> i;
 
       auto t_h = getFTensor0FromVec(*hPtr);
@@ -70,7 +68,6 @@ public:
         ++t_w;
         ++t_h;
       }
-
     }
 
     MoFEMFunctionReturn(0);

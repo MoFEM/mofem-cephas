@@ -59,6 +59,7 @@ using BoundaryEleOp = BoundaryEle::UserDataOperator;
 using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
 using SkinPostProcEle = PostProcBrokenMeshInMoab<BoundaryEle>;
 using SideEle = ElementsAndOps<SPACE_DIM>::SideEle;
+using SetPtsData = FieldEvaluatorInterface::SetPtsData;
 
 inline double iso_hardening_exp(double tau, double b_iso) {
   return std::exp(
@@ -115,6 +116,9 @@ inline auto kinematic_hardening_dplastic_strain(double C1_k) {
 
 PetscBool is_large_strains = PETSC_TRUE; ///< Large strains
 PetscBool set_timer = PETSC_FALSE;       ///< Set timer
+PetscBool do_eval_field = PETSC_FALSE;   ///< Evaluate field
+
+int atom_test = 0; ///< Atom test
 
 double scale = 1.;
 
@@ -208,7 +212,6 @@ template <> struct AddHOOps<2, 2, 2> {
 };
 
 } // namespace PlasticOps
-
 
 struct Example {
 
@@ -439,7 +442,8 @@ MoFEMErrorCode Example::setupProblem() {
     using VolOp = DomainEle::UserDataOperator;
     auto *op_ptr = new VolOp(NOSPACE, VolOp::OPSPACE);
     std::array<double, 2> volume_and_count;
-    op_ptr->doWorkRhsHook = [&](DataOperator *base_op_ptr, int side, EntityType type,
+    op_ptr->doWorkRhsHook = [&](DataOperator *base_op_ptr, int side,
+                                EntityType type,
                                 EntitiesFieldData::EntData &data) {
       MoFEMFunctionBegin;
       auto op_ptr = static_cast<VolOp *>(base_op_ptr);
@@ -499,6 +503,8 @@ MoFEMErrorCode Example::createCommonData() {
                                &is_large_strains, PETSC_NULL);
     CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-set_timer", &set_timer,
                                PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
+                              PETSC_NULL);
 
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
     PetscBool tau_order_is_set; ///< true if tau order is set
@@ -570,9 +576,25 @@ MoFEMErrorCode Example::createCommonData() {
 
 #ifdef ADD_CONTACT
   #ifdef PYTHON_SDF
-  sdfPythonPtr = boost::make_shared<ContactOps::SDFPython>();
-  CHKERR sdfPythonPtr->sdfInit("sdf.py");
-  ContactOps::sdfPythonWeakPtr = sdfPythonPtr;
+  auto file_exists = [](std::string myfile) {
+    std::ifstream file(myfile.c_str());
+    if (file) {
+      return true;
+    }
+    return false;
+  };
+  char sdf_file_name[255] = "sdf.py";
+  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-sdf_file",
+                               sdf_file_name, 255, PETSC_NULL);
+
+  if (file_exists(sdf_file_name)) {
+    MOFEM_LOG("CONTACT", Sev::inform) << sdf_file_name << " file found";
+    sdfPythonPtr = boost::make_shared<ContactOps::SDFPython>();
+    CHKERR sdfPythonPtr->sdfInit(sdf_file_name);
+    ContactOps::sdfPythonWeakPtr = sdfPythonPtr;
+  } else {
+    MOFEM_LOG("CONTACT", Sev::warning) << sdf_file_name << " file NOT found";
+  }
   #endif
 #endif // ADD_CONTACT
 
@@ -830,7 +852,6 @@ MoFEMErrorCode Example::tsSolve() {
   };
 
   auto create_post_process_elements = [&]() {
-    
     auto push_vol_ops = [this](auto &pip) {
       CHKERR PlasticOps::AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
           pip, {H1, HDIV}, "GEOMETRY");
@@ -880,7 +901,8 @@ MoFEMErrorCode Example::tsSolve() {
                 {{"GRAD", common_hencky_ptr->matGradPtr},
                  {"FIRST_PIOLA", common_hencky_ptr->getMatFirstPiolaStress()}},
 
-                {{"PLASTIC_STRAIN", common_plastic_ptr->getPlasticStrainPtr()},
+                {{"HENCKY_STRAIN", common_hencky_ptr->getMatLogC()},
+                 {"PLASTIC_STRAIN", common_plastic_ptr->getPlasticStrainPtr()},
                  {"PLASTIC_FLOW", common_plastic_ptr->getPlasticFlowPtr()}}
 
                 )
@@ -917,10 +939,23 @@ MoFEMErrorCode Example::tsSolve() {
       MoFEMFunctionReturn(0);
     };
 
-    auto vol_post_proc = [this, push_vol_post_proc_ops, push_vol_ops]() {
-      PetscBool post_proc_vol = PETSC_FALSE;
-      CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-post_proc_vol",
-                                 &post_proc_vol, PETSC_NULL);
+    PetscBool post_proc_vol;
+    PetscBool post_proc_skin;
+
+    if constexpr (SPACE_DIM == 2) {
+      post_proc_vol = PETSC_TRUE;
+      post_proc_skin = PETSC_FALSE;
+    } else {
+      post_proc_vol = PETSC_FALSE;
+      post_proc_skin = PETSC_TRUE;
+    }
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-post_proc_vol", &post_proc_vol,
+                               PETSC_NULL);
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-post_proc_skin",
+                               &post_proc_skin, PETSC_NULL);
+
+    auto vol_post_proc = [this, push_vol_post_proc_ops, push_vol_ops,
+                          post_proc_vol]() {
       if (post_proc_vol == PETSC_FALSE)
         return boost::shared_ptr<PostProcEle>();
       auto pp_fe = boost::make_shared<PostProcEle>(mField);
@@ -930,10 +965,8 @@ MoFEMErrorCode Example::tsSolve() {
       return pp_fe;
     };
 
-    auto skin_post_proc = [this, push_vol_post_proc_ops, push_vol_ops]() {
-      PetscBool post_proc_skin = PETSC_TRUE;
-      CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-post_proc_skin",
-                                 &post_proc_skin, PETSC_NULL);
+    auto skin_post_proc = [this, push_vol_post_proc_ops, push_vol_ops,
+                           post_proc_skin]() {
       if (post_proc_skin == PETSC_FALSE)
         return boost::shared_ptr<SkinPostProcEle>();
 
@@ -965,14 +998,169 @@ MoFEMErrorCode Example::tsSolve() {
                            SmartPetscObj<VecScatter>(scatter));
   };
 
+  boost::shared_ptr<SetPtsData> field_eval_data;
+  boost::shared_ptr<MatrixDouble> u_field_ptr;
+
+  std::array<double, SPACE_DIM> field_eval_coords;
+  int coords_dim = SPACE_DIM;
+  CHKERR PetscOptionsGetRealArray(NULL, NULL, "-field_eval_coords",
+                                  field_eval_coords.data(), &coords_dim,
+                                  &do_eval_field);
+
+  boost::shared_ptr<std::map<std::string, boost::shared_ptr<VectorDouble>>>
+      scalar_field_ptrs = boost::make_shared<
+          std::map<std::string, boost::shared_ptr<VectorDouble>>>();
+  boost::shared_ptr<std::map<std::string, boost::shared_ptr<MatrixDouble>>>
+      vector_field_ptrs = boost::make_shared<
+          std::map<std::string, boost::shared_ptr<MatrixDouble>>>();
+  boost::shared_ptr<std::map<std::string, boost::shared_ptr<MatrixDouble>>>
+      sym_tensor_field_ptrs = boost::make_shared<
+          std::map<std::string, boost::shared_ptr<MatrixDouble>>>();
+  boost::shared_ptr<std::map<std::string, boost::shared_ptr<MatrixDouble>>>
+      tensor_field_ptrs = boost::make_shared<
+          std::map<std::string, boost::shared_ptr<MatrixDouble>>>();
+
+  if (do_eval_field) {
+    auto u_field_ptr = boost::make_shared<MatrixDouble>();
+    field_eval_data =
+        mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
+
+    CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree<SPACE_DIM>(
+        field_eval_data, simple->getDomainFEName());
+
+    field_eval_data->setEvalPoints(field_eval_coords.data(), 1);
+    auto no_rule = [](int, int, int) { return -1; };
+    auto field_eval_fe_ptr = field_eval_data->feMethodPtr.lock();
+    field_eval_fe_ptr->getRuleHook = no_rule;
+
+    CHKERR PlasticOps::AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+        field_eval_fe_ptr->getOpPtrVector(), {H1, HDIV}, "GEOMETRY");
+
+    auto [common_plastic_ptr, common_hencky_ptr] =
+        PlasticOps::createCommonPlasticOps<SPACE_DIM, IT, DomainEleOp>(
+            mField, "MAT_PLASTIC", field_eval_fe_ptr->getOpPtrVector(), "U",
+            "EP", "TAU", 1., Sev::inform);
+
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_field_ptr));
+
+    if ((common_plastic_ptr) && (common_hencky_ptr) && (scalar_field_ptrs)) {
+      if (is_large_strains) {
+        scalar_field_ptrs->insert(
+            {"PLASTIC_SURFACE", common_plastic_ptr->getPlasticSurfacePtr()});
+        scalar_field_ptrs->insert(
+            {"PLASTIC_MULTIPLIER", common_plastic_ptr->getPlasticTauPtr()});
+        vector_field_ptrs->insert({"U", u_field_ptr});
+        sym_tensor_field_ptrs->insert(
+            {"PLASTIC_STRAIN", common_plastic_ptr->getPlasticStrainPtr()});
+        sym_tensor_field_ptrs->insert(
+            {"PLASTIC_FLOW", common_plastic_ptr->getPlasticFlowPtr()});
+        sym_tensor_field_ptrs->insert(
+            {"HENCKY_STRAIN", common_hencky_ptr->getMatLogC()});
+        tensor_field_ptrs->insert({"GRAD", common_hencky_ptr->matGradPtr});
+        tensor_field_ptrs->insert(
+            {"FIRST_PIOLA", common_hencky_ptr->getMatFirstPiolaStress()});
+      } else {
+        scalar_field_ptrs->insert(
+            {"PLASTIC_SURFACE", common_plastic_ptr->getPlasticSurfacePtr()});
+        scalar_field_ptrs->insert(
+            {"PLASTIC_MULTIPLIER", common_plastic_ptr->getPlasticTauPtr()});
+        vector_field_ptrs->insert({"U", u_field_ptr});
+        sym_tensor_field_ptrs->insert(
+            {"STRAIN", common_plastic_ptr->mStrainPtr});
+        sym_tensor_field_ptrs->insert(
+            {"STRESS", common_plastic_ptr->mStressPtr});
+        sym_tensor_field_ptrs->insert(
+            {"PLASTIC_STRAIN", common_plastic_ptr->getPlasticStrainPtr()});
+        sym_tensor_field_ptrs->insert(
+            {"PLASTIC_FLOW", common_plastic_ptr->getPlasticFlowPtr()});
+      }
+    }
+  }
+
+  auto test_monitor_ptr = boost::make_shared<FEMethod>();
+
   auto set_time_monitor = [&](auto dm, auto solver) {
     MoFEMFunctionBegin;
-    boost::shared_ptr<Monitor> monitor_ptr(
-        new Monitor(dm, create_post_process_elements(), reactionFe, uXScatter,
-                    uYScatter, uZScatter));
+    boost::shared_ptr<Monitor<SPACE_DIM>> monitor_ptr(new Monitor<SPACE_DIM>(
+        dm, create_post_process_elements(), reactionFe, uXScatter, uYScatter,
+        uZScatter, field_eval_coords, field_eval_data, scalar_field_ptrs,
+        vector_field_ptrs, sym_tensor_field_ptrs, tensor_field_ptrs));
     boost::shared_ptr<ForcesAndSourcesCore> null;
+
+    test_monitor_ptr->postProcessHook = [&]() {
+      MoFEMFunctionBegin;
+
+      if (atom_test && fabs(test_monitor_ptr->ts_t - 0.5) < 1e-12 &&
+          test_monitor_ptr->ts_step == 25) {
+
+        if (scalar_field_ptrs->at("PLASTIC_MULTIPLIER")->size()) {
+          auto t_tau =
+              getFTensor0FromVec(*scalar_field_ptrs->at("PLASTIC_MULTIPLIER"));
+          MOFEM_LOG("PlasticSync", Sev::inform) << "Eval point tau: " << t_tau;
+
+          if (atom_test == 1 && fabs(t_tau - 0.688861) > 1e-5) {
+            SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                     "atom test %d failed: wrong plastic multiplier value",
+                     atom_test);
+          }
+        }
+
+        if (vector_field_ptrs->at("U")->size1()) {
+          FTensor::Index<'i', SPACE_DIM> i;
+          auto t_disp =
+              getFTensor1FromMat<SPACE_DIM>(*vector_field_ptrs->at("U"));
+          MOFEM_LOG("PlasticSync", Sev::inform) << "Eval point U: " << t_disp;
+
+          if (atom_test == 1 && fabs(t_disp(0) - 0.25 / 2.) > 1e-5 ||
+              fabs(t_disp(1) + 0.0526736) > 1e-5) {
+            SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                     "atom test %d failed: wrong displacement value",
+                     atom_test);
+          }
+        }
+
+        if (sym_tensor_field_ptrs->at("PLASTIC_STRAIN")->size1()) {
+          auto t_plastic_strain = getFTensor2SymmetricFromMat<SPACE_DIM>(
+              *sym_tensor_field_ptrs->at("PLASTIC_STRAIN"));
+          MOFEM_LOG("PlasticSync", Sev::inform)
+              << "Eval point EP: " << t_plastic_strain;
+
+          if (atom_test == 1 &&
+                  fabs(t_plastic_strain(0, 0) - 0.221943) > 1e-5 ||
+              fabs(t_plastic_strain(0, 1)) > 1e-5 ||
+              fabs(t_plastic_strain(1, 1) + 0.110971) > 1e-5) {
+            SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                     "atom test %d failed: wrong plastic strain value",
+                     atom_test);
+          }
+        }
+
+        if (tensor_field_ptrs->at("FIRST_PIOLA")->size1()) {
+          auto t_piola_stress = getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(
+              *tensor_field_ptrs->at("FIRST_PIOLA"));
+          MOFEM_LOG("PlasticSync", Sev::inform)
+              << "Eval point Piola stress: " << t_piola_stress;
+
+          if (atom_test == 1 && fabs((t_piola_stress(0, 0) - 198.775) /
+                                     t_piola_stress(0, 0)) > 1e-5 ||
+              fabs(t_piola_stress(0, 1)) + fabs(t_piola_stress(1, 0)) +
+                      fabs(t_piola_stress(1, 1)) >
+                  1e-5) {
+            SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                     "atom test %d failed: wrong Piola stress value",
+                     atom_test);
+          }
+        }
+      }
+
+      MOFEM_LOG_SYNCHRONISE(mField.get_comm());
+      MoFEMFunctionReturn(0);
+    };
+
     CHKERR DMMoFEMTSSetMonitor(dm, solver, simple->getDomainFEName(),
-                               monitor_ptr, null, null);
+                               monitor_ptr, null, test_monitor_ptr);
+
     MoFEMFunctionReturn(0);
   };
 
@@ -1354,7 +1542,7 @@ MoFEMErrorCode Example::testOperators() {
         simple->getDM(), fe_name, rhs_pipeline, lhs_pipeline, x, dot_x,
         SmartPetscObj<Vec>(), diff_x, 0, 0.5, eps);
 
-    // Calculate norm of difference between directional derivative calculated 
+    // Calculate norm of difference between directional derivative calculated
     // from finite difference, and tangent matrix.
     double fnorm;
     CHKERR VecNorm(diff_res, NORM_2, &fnorm);
@@ -1377,8 +1565,6 @@ MoFEMErrorCode Example::testOperators() {
   CHKERR test_domain_ops(simple->getDomainFEName(), pip->getDomainLhsFE(),
                          pip->getDomainRhsFE(), dot_x_plastic_active,
                          diff_x_plastic_active);
-
-
 
   MoFEMFunctionReturn(0);
 };
@@ -1415,6 +1601,11 @@ int main(int argc, char *argv[]) {
   LogManager::setLog("CONTACT");
   MOFEM_LOG_TAG("CONTACT", "Contact");
 #endif // ADD_CONTACT
+
+  core_log->add_sink(
+      LogManager::createSink(LogManager::getStrmSync(), "PlasticSync"));
+  LogManager::setLog("PlasticSync");
+  MOFEM_LOG_TAG("PlasticSync", "PlasticSync");
 
   try {
 
@@ -1716,7 +1907,7 @@ scaleL2(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
                              scale](DataOperator *base_op_ptr, int, EntityType,
                                     EntitiesFieldData::EntData &) {
     *scale_ptr = scale / det_ptr->size(); // distribute average element size
-                                         // over integrartion points
+                                          // over integration points
     return 0;
   };
   pipeline.push_back(op_scale);

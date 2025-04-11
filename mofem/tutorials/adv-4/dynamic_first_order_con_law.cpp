@@ -789,20 +789,13 @@ struct Monitor : public FEMethod {
   MoFEMErrorCode postProcess() {
     MoFEMFunctionBegin;
 
-    // cerr << "wagawaga\n";
     auto *simple = mField.getInterface<Simple>();
 
-    if (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->evalFEAtThePoint3D(
-          fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-          simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
-          mField.get_comm_rank(), getCacheWeakPtr().lock(), MF_EXIST, QUIET);
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->evalFEAtThePoint2D(
-          fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-          simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
-          mField.get_comm_rank(), getCacheWeakPtr().lock(), MF_EXIST, QUIET);
-    }
+    CHKERR mField.getInterface<FieldEvaluatorInterface>()
+        ->evalFEAtThePoint<SPACE_DIM>(
+            fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
+            simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
+            mField.get_comm_rank(), getCacheWeakPtr().lock(), MF_EXIST, QUIET);
 
     if (velocityFieldPtr->size1()) {
       auto t_vel = getFTensor1FromMat<SPACE_DIM>(*velocityFieldPtr);
@@ -1072,13 +1065,8 @@ MoFEMErrorCode Example::solveSystem() {
   if (field_eval_flag) {
     field_eval_data =
         mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
-    if (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
-          field_eval_data, simple->getDomainFEName());
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
-          field_eval_data, simple->getDomainFEName());
-    }
+    CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree<SPACE_DIM>(
+        field_eval_data, simple->getDomainFEName());
 
     field_eval_data->setEvalPoints(field_eval_coords.data(), 1);
 

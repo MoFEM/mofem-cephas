@@ -1,7 +1,6 @@
 /**
  * @file Lie.hpp
- * @author lukasz.kaczmarczyk@glasgowa.ac.uk
- * @brief
+ * @brief Lie algebra implementation
  * @version 0.1
  * @date 2024-12-22
  *

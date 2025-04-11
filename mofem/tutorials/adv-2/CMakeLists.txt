@@ -41,12 +41,22 @@ tutorials_copy_and_install("meshes/*" "${permissions_execute}")
 tutorials_build_and_install(
   thermo_elastic_2d ${CMAKE_CURRENT_SOURCE_DIR}/thermo_elastic.cpp)
 set_target_properties(
-  thermo_elastic_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")
+  thermo_elastic_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2 -DFINITE_DEFORMATION_FLAG=false -DHENCKY_SMALL_STRAIN")
 
 tutorials_build_and_install(
   thermo_elastic_3d ${CMAKE_CURRENT_SOURCE_DIR}/thermo_elastic.cpp)
 set_target_properties(
-  thermo_elastic_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")
+  thermo_elastic_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DFINITE_DEFORMATION_FLAG=false -DHENCKY_SMALL_STRAIN")
+
+tutorials_build_and_install(
+  thermo_elastic_finite_strain_2d ${CMAKE_CURRENT_SOURCE_DIR}/thermo_elastic.cpp)
+set_target_properties(
+  thermo_elastic_finite_strain_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2 -FINITE_DEFORMATION_FLAG=true")
+
+tutorials_build_and_install(
+  thermo_elastic_finite_strain_3d ${CMAKE_CURRENT_SOURCE_DIR}/thermo_elastic.cpp)
+set_target_properties(
+  thermo_elastic_finite_strain_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -FINITE_DEFORMATION_FLAG=true")
 
 #################
 ##### TESTS #####
@@ -170,5 +180,28 @@ add_test(
   -ref_temp 293
   -field_eval_coords 0.5,0.5
   -atom_test 4
+  -time_scalar_file time_scale.txt
+)
+
+add_test(
+  finite_strain_2d_unconstrained
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  thermo_elastic_finite_strain_2d
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/finite_strain_thermoelastic_2d_unconstrained_4p.h5m
+  -order 2
+  -pc_type lu
+  -pc_factor_mat_solver_type mumps  
+  -ts_type beuler
+  -ts_max_time 10 
+  -ts_dt 10
+  -young_modulus 200e3 
+  -poisson_ratio 0.3 
+  -coeff_expansion 0.1 
+  -capacity 0
+  -conductivity 500 
+  -init_temp 0 
+  -ref_temp 20
+  -field_eval_coords 1,1
+  -atom_test 5
   -time_scalar_file time_scale.txt
 )

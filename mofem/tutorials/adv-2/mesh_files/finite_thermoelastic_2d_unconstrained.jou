@@ -1,0 +1,47 @@
+reset
+set duplicate block elements on
+
+create surface rectangle width 1 height 1 zplane
+move vol 1 x  0.5 y 0.5 z 0
+
+block 10 surface 1
+block 10 name "MAT_ELASTIC_STEEL" attribute count 2
+block 10 attribute index 1 200e3
+block 10 attribute index 2 0.3
+
+block 1 surface 1
+block 1 name "MAT_THERMAL_STEEL"
+block 1 attribute count 2
+block 1 attribute index 1 500 # heat conductivity 
+block 1 attribute index 2 0 # heat capacity 
+
+block 11 surface 1
+block 11 name "MAT_THERMOELASTIC_STEEL"
+block 11 attribute count 2
+block 11 attribute index 1 0 # reference temperature
+block 11 attribute index 2 0.1 # thermal expansion
+
+block 2 curve 1 2 3 4
+block 2 name "TEMPERATURE_1"
+block 2 attribute count 1
+block 2 attribute index 1 1 # temperature BC
+
+block 101 curve 3
+block 101 name "FIX_Y"
+block 101 attribute count 1
+block 101 attribute index 1 0
+
+block 102 curve 2
+block 102 name "FIX_X"
+block 102 attribute count 1
+block 102 attribute index 1 0
+
+surface all scheme map
+surface all size 0.25
+mesh surface all
+qtri surface all
+
+save as "$MOFEM_INSTALL_DIR/mofem-cephas/mofem/tutorials/adv-2/mesh_files/finite_strain_thermoelastic_2d_unconstrained.cub" overwrite
+
+
+

@@ -70,21 +70,12 @@ struct MonitorIncompressible : public FEMethod {
     auto *simple = m_field_ptr->getInterface<Simple>();
 
     if (doEvalField) {
-      if (SPACE_DIM == 3) {
-        CHKERR m_field_ptr->getInterface<FieldEvaluatorInterface>()
-            ->evalFEAtThePoint3D(
-                fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-                simple->getDomainFEName(), fieldEvalData,
-                m_field_ptr->get_comm_rank(), m_field_ptr->get_comm_rank(),
-                getCacheWeakPtr().lock(), MF_EXIST, QUIET);
-      } else {
-        CHKERR m_field_ptr->getInterface<FieldEvaluatorInterface>()
-            ->evalFEAtThePoint2D(
-                fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-                simple->getDomainFEName(), fieldEvalData,
-                m_field_ptr->get_comm_rank(), m_field_ptr->get_comm_rank(),
-                getCacheWeakPtr().lock(), MF_EXIST, QUIET);
-      }
+      CHKERR m_field_ptr->getInterface<FieldEvaluatorInterface>()
+          ->evalFEAtThePoint<SPACE_DIM>(
+              fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
+              simple->getDomainFEName(), fieldEvalData,
+              m_field_ptr->get_comm_rank(), m_field_ptr->get_comm_rank(),
+              getCacheWeakPtr().lock(), MF_EXIST, QUIET);
 
       if (vecFieldPtr->size1()) {
         auto t_disp = getFTensor1FromMat<SPACE_DIM>(*vecFieldPtr);
@@ -724,13 +715,8 @@ MoFEMErrorCode Incompressible::tsSolve() {
     vector_field_ptr = boost::make_shared<MatrixDouble>();
     field_eval_data =
         mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
-    if constexpr (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
-          field_eval_data, simple->getDomainFEName());
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
-          field_eval_data, simple->getDomainFEName());
-    }
+    CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree<SPACE_DIM>(
+        field_eval_data, simple->getDomainFEName());
 
     field_eval_data->setEvalPoints(field_eval_coords.data(), 1);
     auto no_rule = [](int, int, int) { return -1; };

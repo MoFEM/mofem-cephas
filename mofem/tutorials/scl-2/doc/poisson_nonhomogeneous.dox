@@ -166,7 +166,7 @@ MoFEM has an in-built extensive library consisting of operators and to implement
 
 \subsubsection OpDomainLhs OpDomainLhs()
 For example, we can notice that our `OpDomainLhs` is similar to the `OpDomainLhsMatrixK` UDO in \ref basic_tutorials_poisson_homogeneous. So, let's identify the differences bellow and then the further will be discussed: 
- \snippet users_modules/tutorials/scl-2/src/poisson_2d_nonhomogeneous.hpp OpDomainLhs
+ \snippet tutorials/scl-2/src/poisson_2d_nonhomogeneous.hpp OpDomainLhs
 
 In the above, the class OpDomainLhs is inherited from OpFaceEle, which stands for the alias for the base class MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator. Within this class, there are two public functions: OpDomainLhs() and doWork(). Here, the doWork() does the same as iNtegrate as in \ref basic_tutorials_poisson_homogeneous. However, the difference is that we are using a different Lambda  function to calculate the body source term. Alongside, we have got two private members named locLhs and transLocLhs. This follows the concept of data encapsulation to hide values and objects inside the class as much as possible.
 
@@ -193,7 +193,7 @@ The function MatSetValues() is used to assemble into the global matrix. This fun
 \subsubsection OpDomainRhs OpDomainRhs()
 The characterization of `OpDomainRhs` is straightforward and also aligns with `OpDomainRhsVectorF` in the context of SCL-1 for solving Poisson's equation with homogeneous BC. However, there is a slight difference in the body source term. The accompanying code snippet illustrates in the following:
 
- \snippet users_modules/tutorials/scl-2/src/poisson_2d_nonhomogeneous.hpp OpDomainRhs
+ \snippet tutorials/scl-2/src/poisson_2d_nonhomogeneous.hpp OpDomainRhs
 
  In the above snippet, we can find a different `body_source` term which is calculated by calling a Lambda  function `sourceTermFunc()` with coordinate(x, y, z) i.e. t_coords(0), t_coords(1), and t_coords(2) as arguments as follows: 
 \code 
@@ -211,7 +211,7 @@ double body_source =
 
 \subsubsection OpBoundaryLhs OpBoundaryLhs()
  `OpBoundaryLhs` is focusing on the boundary(\f$ \Gamma\f$) instead of the domain. So we're using OpEdgeEle instead of OpFaceEle. You can realize the fact easily that for 2D problems any boundary element type should be edge(1D) and for 3D problems it will be face(2D) type element.This operator is quite similar to our first operator, OpDomainLhs. Therefore we are not describing it again. Further, the code snippet is here:
- \snippet users_modules/tutorials/scl-2/src/poisson_2d_nonhomogeneous.hpp OpBoundaryLhs
+ \snippet tutorials/scl-2/src/poisson_2d_nonhomogeneous.hpp OpBoundaryLhs
 
 \subsubsection OpBoundaryRhs OpBoundaryRhs()
 If we compare the OpBoundaryRhs operator, it also closely resembles the OpDomainRhsVectorF operator in its structure. Additionally, it is also similar to OpBoundaryRhs. However, we are now using boundary_term here instead of body_source as follows: 
@@ -278,7 +278,7 @@ private:
 \endcode
 \subsubsection readMesh readMesh()
 Next, this code defines function in MoFEM to loads and reads your mesh file.
- \snippet users_modules/tutorials/scl-2/poisson_2d_nonhomogeneous.cpp Read mesh
+ \snippet tutorials/scl-2/poisson_2d_nonhomogeneous.cpp Read mesh
 
 \subsubsection setupProblem setupProblem()
   Since we are considering both domain and boundary, we need to add the domain and boundary field in the simpleInterface to setup the problem. Besides, we have selected the polynomial base function as `AINSWORTH_BERNSTEIN_BEZIER_BASE` and \f$ \mathbf{H^1}\f$ scalar space, where we are considering single(1) degree of freedom for each shape function has
@@ -303,7 +303,7 @@ MoFEMFunctionReturn(0);
 
 \subsubsection boundaryCondition boundaryCondition()
 Next, we are proceeding to discuss the detail for setting up boundary condition. This code involves marking degrees of freedom on boundary entities, merging markers, and obtaining entities for field splitting in the following:
- \snippet users_modules/tutorials/scl-2/poisson_2d_nonhomogeneous.cpp Boundary condition
+ \snippet tutorials/scl-2/poisson_2d_nonhomogeneous.cpp Boundary condition
 
 The line `bc_mng->pushMarkDOFsOnEntities(...)` is used to collect the degrees of freedom (DOFs) of the entities only for marked block set `("BOUNDARY_CONDITION")`. Then, the block sets are accumulated as in container and assembled in boundaryMarker. In addition, the ``boundaryEntitiesForFieldsplit` is to get the range/IDs for the blocks including vertex, edges or faces. It has been done to indicate the difference between the domain and boundary entities.
 
@@ -311,7 +311,7 @@ The line `bc_mng->pushMarkDOFsOnEntities(...)` is used to collect the degrees of
 \subsubsection assembleSystem assembleSystem()
 At this stage, we are all set to focus  on assembling all we did before to the pipeline. However, we find some changes that happens here in codes compared with \ref basic_tutorials_poisson_nonhomogeneous. Before going to that, first we add operators to the OpDomainLhsPipeline using the `AddHOOps` function considering scalar space H1. Then we need to assemble to the pipeline for the domain using OpSetBc. Then push the main `OpDomainLhs` operator, and finally unset the assembly using OpUnSetBc. We will discuss it in detail after going through the code snippet in the following:
 
- \snippet users_modules/tutorials/scl-2/poisson_2d_nonhomogeneous.cpp Assemble system
+ \snippet tutorials/scl-2/poisson_2d_nonhomogeneous.cpp Assemble system
 
 Here, the process involves using the `OpSetBc`, `OpUnSetBc`, and UDOs to push back to the  RHS and LHS pipelines for assembling. Specifically, these operations are being carried out on the pipeline for the Domain and boundary in same way i.e. `getOpDomainLhsPipeline()`, `OpBoundaryLhsPipeline`. So we are only describing for only one set of assemble processes in the following: 
 
@@ -339,7 +339,7 @@ To recapitulate, when we are assembling for the domain, `OpSetBc()` works for sk
 
 \subsubsection setIntegrationRules setIntegrationRules()
 Afterwards, the computation of LHS and RHS is defined in the setIntegrationRules. The instructions for the functions setIntegrationRules() is same as it was in \ref basic_tutorials_poisson_homogeneous.
- \snippet users_modules/tutorials/scl-2/poisson_2d_nonhomogeneous.cpp Set integration rules 
+ \snippet tutorials/scl-2/poisson_2d_nonhomogeneous.cpp Set integration rules 
 \subsubsection solveSystem solveSystem()
 
 To solve the problem, we remember that we made our assembling systems ready using the set/unseting process in boundaryCondition() for domain and boundaries as shown in Figure: 2 where we can consider the subscripts 'D' is for domain and 'B' for boundary.
@@ -389,7 +389,7 @@ The algorithm for the above code is to check whether the indices in the field we
 \endcode
 
 The rest of the code including `outputResults()` and main function does the same as \ref basic_tutorials_poisson_nonhomogeneous
- \snippet users_modules/tutorials/scl-2/poisson_2d_nonhomogeneous.cpp Read mesh
+ \snippet tutorials/scl-2/poisson_2d_nonhomogeneous.cpp Read mesh
 Then, run the analysis and get the newly created output file, namely `out_result.h5m`. Convert it to `*.vtk` format. Then open it in Paraview and use the filter `WarpByScalar`, you will be able to see the deformation as bellow:
 
 \section basic_tutorials_poisson_nonhomogeneous_result Results

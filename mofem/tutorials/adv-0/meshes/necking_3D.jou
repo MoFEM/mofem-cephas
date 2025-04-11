@@ -68,26 +68,3 @@ block 9 attribute index 1 0
 block 9 attribute index 2 0
 block 9 attribute index 3 0
 
-#block 6 surface 26 36
-#block 6 name "REMOVE_X"
-#block 6 attribute count 3
-#block 6 attribute index 1 0
-#block 6 attribute index 2 0
-#block 6 attribute index 3 0
-#
-#block 7 surface 29 39
-#block 7 name "REMOVE_Y"
-#block 7 attribute count 3
-#block 7 attribute index 1 0
-#block 7 attribute index 2 0
-#block 7 attribute index 3 0
-#
-#block 8 surface 38
-#block 8 name "REMOVE_Z1"
-#block 8 attribute count 3
-#block 8 attribute index 1 0
-#block 8 attribute index 2 0
-#block 8 attribute index 3 0
-#
-
-
