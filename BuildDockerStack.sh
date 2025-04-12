@@ -3,14 +3,14 @@
 mkdir -p empty
 
 export ACCOUNT=agshvarts
-export VERSION=MOS2025
+export VERSION=mos-demo
 
 # Create environment
-docker build -t $ACCOUNT/mofem-spack-env -f Dockerfile-spack-env empty/
+docker build -t $ACCOUNT/mofem-spack-env -f Dockerfile-spack-env .
 docker tag $ACCOUNT/mofem-spack-env:latest $ACCOUNT/mofem-spack-env:$VERSION
 
 #Build core and users modules
-docker build -t $ACCOUNT/mofem-spack-mofem -f Dockerfile-spack-mofem empty/
+docker build -t $ACCOUNT/mofem-spack-mofem -f Dockerfile-spack-mofem .
 docker tag $ACCOUNT/mofem-spack-mofem:latest $ACCOUNT/mofem-spack-mofem:$VERSION
 # docker tag $ACCOUNT/mofem-spack-mofem:latest $ACCOUNT/mofem-intermidiate:latest
 

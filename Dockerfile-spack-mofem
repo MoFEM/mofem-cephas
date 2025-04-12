@@ -2,8 +2,7 @@ FROM agshvarts/mofem-spack-env:latest
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk,Andrei.Shvarts@glasgow.ac.uk"
 
-ENV MOFEM_BRANCH=Workshop2023
-
+# clone MoFEM core and ep module
 RUN cd $MOFEM_INSTALL_DIR/ && \
   git clone -b lukasz/eshelby https://bitbucket.org/mofem/mofem-cephas.git && \
   git clone -b develop https://bitbucket.org/mofem/users-modules-cephas.git mofem-cephas/mofem/users_modules && \
@@ -13,24 +12,20 @@ ENV MOFEM_ENV_FILE=/etc/profile.d/mofem.sh
 
 # Install core library
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
-  spack dev-build -j6 \
+  spack dev-build -j12 \
   --source-path $MOFEM_SRC_DIR \
   --keep-prefix \
-  --test root \
   mofem-cephas@develop~copy_user_modules+docker \
   target=$TARGET build_type=Release ^petsc+X ^boost+python+numpy && \
   export MOFEM_CEPHAS_HASH=`spack find -lv mofem-cephas | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
   cd $MOFEM_INSTALL_DIR/core-build-Release-$MOFEM_CEPHAS_HASH && make clean && \
   touch $MOFEM_ENV_FILE && \
   echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> $MOFEM_ENV_FILE && \
-  echo "export MOFEM_CEPHAS_HASH=$MOFEM_CEPHAS_HASH" >> $MOFEM_ENV_FILE && \
-  export TFEL_LIB=$(spack find -p tfel | grep tfel | awk '{print $2 "/lib"}') && \
-  echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$TFEL_LIB" >> $MOFEM_ENV_FILE
+  echo "export MOFEM_CEPHAS_HASH=$MOFEM_CEPHAS_HASH" >> $MOFEM_ENV_FILE
 
 # Install users mdoules
 RUN . $MOFEM_ENV_FILE && \
-  spack dev-build -j6 \
-  --test root  \
+  spack dev-build -j12 \
   --source-path $MOFEM_UM_SRC_DIR \
   mofem-users-modules@develop+docker build_type=Release \
   ^mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas install_id=0 \
@@ -44,8 +39,12 @@ RUN . $MOFEM_ENV_FILE && \
 
 WORKDIR $MOFEM_INSTALL_DIR
 
+# create symlinks to MoFEM executables
+RUN . $MOFEM_ENV_FILE && \
+  spack view --verbose symlink -i core_view mofem-cephas 
+
 # image run hook: the -l will make sure /etc/profile environments are loaded
-CMD        /bin/bash -l
+CMD /bin/bash -l
 
 
 
