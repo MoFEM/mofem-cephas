@@ -11,10 +11,15 @@ block 10 attribute index 2 0.3
 
 block 1 volume 1
 block 1 name "MAT_THERMAL_STEEL"
-block 1 attribute count 3
+block 1 attribute count 2
 block 1 attribute index 1 500 # heat conductivity 
 block 1 attribute index 2 3000 # heat capacity 
-block 1 attribute index 3 1e-5 # thermal expansion
+
+block 11 volume 1
+block 11 name "MAT_THERMOELASTIC_STEEL"
+block 11 attribute count 2
+block 11 attribute index 1 293 # reference temperature
+block 11 attribute index 2 1e-5 # thermal expansion
 
 block 2 surface 4
 block 2 name "CONVECTION_1"
@@ -32,15 +37,15 @@ block 4 surface 3
 block 4 name "RADIATION_1"
 block 4 attribute count 3
 block 4 attribute index 1 5.670374419e-8 # S-B constant
-block 4 attribute index 2 0.2 # emissivity [0, 1] (assuming not perfect black body) Because the emissivity change as the temperature increase and at 1273.15 K the plasterboard surface emissivity is taken as 0.8).
-block 4 attribute index 3 873 # temperature of the fire in K ( The average peak temperature of a residential building can reach up to 982C-1000C according to Ntional Fire Protection Association)
+block 4 attribute index 2 0.2 # emissivity [0, 1]
+block 4 attribute index 3 873 # ambient temperature
 
 block 5 surface 5
 block 5 name "RADIATION_2"
 block 5 attribute count 3
 block 5 attribute index 1 5.670374419e-8 # S-B constant
-block 5 attribute index 2 0.8 # emissivity [0, 1] (assuming not perfect black body) Because the emissivity change as the temperature increase and at 1273.15 K the plasterboard surface emissivity is taken as 0.8).
-block 5 attribute index 3 873 # temperature of the fire in K ( The average peak temperature of a residential building can reach up to 982C-1000C according to Ntional Fire Protection Association)
+block 5 attribute index 2 0.8 # emissivity [0, 1]
+block 5 attribute index 3 873 # ambient temperature
 
 block 100 surface 1 2
 block 100 name "FIX_Z" 
@@ -62,4 +67,7 @@ volume all size 0.25
 mesh volume all
 htet volume all
 
-save as "/Users/ashvarts/mofem_install/testing/conv_rad_3d_exp_iso.cub" overwrite
+save as "$MOFEM_INSTALL_DIR/mofem-cephas/mofem/tutorials/adv-2/mesh_files/conv_rad_3d_exp_iso.cub" overwrite
+
+
+

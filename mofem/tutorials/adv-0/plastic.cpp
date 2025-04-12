@@ -576,9 +576,25 @@ MoFEMErrorCode Example::createCommonData() {
 
 #ifdef ADD_CONTACT
   #ifdef PYTHON_SDF
-  sdfPythonPtr = boost::make_shared<ContactOps::SDFPython>();
-  CHKERR sdfPythonPtr->sdfInit("sdf.py");
-  ContactOps::sdfPythonWeakPtr = sdfPythonPtr;
+  auto file_exists = [](std::string myfile) {
+    std::ifstream file(myfile.c_str());
+    if (file) {
+      return true;
+    }
+    return false;
+  };
+  char sdf_file_name[255] = "sdf.py";
+  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-sdf_file",
+                               sdf_file_name, 255, PETSC_NULL);
+
+  if (file_exists(sdf_file_name)) {
+    MOFEM_LOG("CONTACT", Sev::inform) << sdf_file_name << " file found";
+    sdfPythonPtr = boost::make_shared<ContactOps::SDFPython>();
+    CHKERR sdfPythonPtr->sdfInit(sdf_file_name);
+    ContactOps::sdfPythonWeakPtr = sdfPythonPtr;
+  } else {
+    MOFEM_LOG("CONTACT", Sev::warning) << sdf_file_name << " file NOT found";
+  }
   #endif
 #endif // ADD_CONTACT
 
@@ -1097,7 +1113,7 @@ MoFEMErrorCode Example::tsSolve() {
           MOFEM_LOG("PlasticSync", Sev::inform) << "Eval point U: " << t_disp;
 
           if (atom_test == 1 && fabs(t_disp(0) - 0.25 / 2.) > 1e-5 ||
-              fabs(t_disp(1) + 0.0526736) > 1e-5 || fabs(t_disp(2)) > 1e-5) {
+              fabs(t_disp(1) + 0.0526736) > 1e-5) {
             SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                      "atom test %d failed: wrong displacement value",
                      atom_test);

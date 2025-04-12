@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     const MoFEM::Problem *prb_ptr;
     CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
 
-    CHKERR field_eval_ptr->buildTree3D(data_at_pts, "MAGNETIC");
+    CHKERR field_eval_ptr->buildTree<3>(data_at_pts, "MAGNETIC");
     BoundBox box;
     CHKERR data_at_pts->treePtr->get_bounding_box(box);
 
@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
         std::array<double, 3> point = {t_p(0), t_p(1), t_p(2)};
         data_at_pts->setEvalPoints(point.data(), 1);
 
-        CHKERR field_eval_ptr->evalFEAtThePoint3D(
+        CHKERR field_eval_ptr->evalFEAtThePoint<3>(
             point.data(), dist, prb_ptr->getName(), "MAGNETIC", data_at_pts,
             m_field.get_comm_rank(), m_field.get_comm_rank(), cache_ptr,
             MF_EXIST, QUIET);

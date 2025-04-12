@@ -322,13 +322,8 @@ MoFEMErrorCode Example::setupProblem() {
     fieldEvalData =
         mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
 
-    if constexpr (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
-          fieldEvalData, simple->getDomainFEName());
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
-          fieldEvalData, simple->getDomainFEName());
-    }
+    CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree<SPACE_DIM>(
+        fieldEvalData, simple->getDomainFEName());
 
     fieldEvalData->setEvalPoints(fieldEvalCoords.data(), 1);
     auto no_rule = [](int, int, int) { return -1; };
@@ -535,17 +530,11 @@ MoFEMErrorCode Example::solveSystem() {
   CHKERR DMoFEMMeshToLocalVector(dm, D, INSERT_VALUES, SCATTER_REVERSE);
 
   if (doEvalField) {
-    if constexpr (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->evalFEAtThePoint3D(
-          fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-          simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
-          mField.get_comm_rank(), nullptr, MF_EXIST, QUIET);
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->evalFEAtThePoint2D(
-          fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-          simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
-          mField.get_comm_rank(), nullptr, MF_EXIST, QUIET);
-    }
+    CHKERR mField.getInterface<FieldEvaluatorInterface>()
+        ->evalFEAtThePoint<SPACE_DIM>(
+            fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
+            simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
+            mField.get_comm_rank(), nullptr, MF_EXIST, QUIET);
 
     if (vectorFieldPtr->size1()) {
       auto t_disp = getFTensor1FromMat<SPACE_DIM>(*vectorFieldPtr);
@@ -1146,6 +1135,7 @@ MoFEMErrorCode SetUpSchurImpl::setDiagonalPC(PC pc) {
       PetscBool same = PETSC_FALSE;
       PetscObjectTypeCompare((PetscObject)pc, PCMG, &same);
       if (same) {
+        MOFEM_LOG("TIMER", Sev::inform) << "Set up MG";
         CHKERR PCMGSetUpViaApproxOrders(
             pc, createPCMGSetUpViaApproxOrdersCtx(dm, S, true));
         CHKERR PCSetFromOptions(pc);
@@ -1153,6 +1143,24 @@ MoFEMErrorCode SetUpSchurImpl::setDiagonalPC(PC pc) {
       MoFEMFunctionReturn(0);
     };
 
+    auto set_pc_ksp = [&](auto dm, auto pc, auto S) {
+      MoFEMFunctionBegin;
+      PetscBool same = PETSC_FALSE;
+      PetscObjectTypeCompare((PetscObject)pc, PCKSP, &same);
+      if (same) {
+        MOFEM_LOG("TIMER", Sev::inform) << "Set up inner KSP for PCKSP";
+        CHKERR PCSetFromOptions(pc);
+        KSP inner_ksp;
+        CHKERR PCKSPGetKSP(pc, &inner_ksp);
+        PC inner_pc;
+        CHKERR KSPGetPC(inner_ksp, &inner_pc);
+        CHKERR PCSetFromOptions(inner_pc);
+        CHKERR set_pc_p_mg(dm, inner_pc, S);
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR set_pc_ksp(schurDM, get_pc(subksp[1]), S);
     CHKERR set_pc_p_mg(schurDM, get_pc(subksp[1]), S);
 
     CHKERR PetscFree(subksp);
