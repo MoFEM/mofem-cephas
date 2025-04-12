@@ -191,6 +191,7 @@ int main(int argc, char *argv[]) {
         t_stress(i, j) =
             -t_D(i, j, k, l) * t_kd(k, l) * (temp - temp_0) * alpha;
         ++t_stress;
+        
       }
 
       CHKERR moab.tag_set_data(interp_tag, src_elems, &stress[0]);
