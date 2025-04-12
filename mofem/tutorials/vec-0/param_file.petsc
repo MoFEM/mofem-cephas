@@ -1,10 +1,10 @@
 -ksp_type fgmres
 -ksp_monitor
  
-#-pc_type lu  
+-pc_type lu  
 -pc_factor_mat_solver_type mumps
  
--pc_type fieldsplit
+#-pc_type fieldsplit
 -pc_fieldsplit_type schur
  
 -fieldsplit_0_ksp_type preonly
