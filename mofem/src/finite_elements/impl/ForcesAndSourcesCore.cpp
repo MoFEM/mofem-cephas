@@ -1812,30 +1812,66 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopThis(
     const LogManager::SeverityLevel sev) {
   MoFEMFunctionBegin;
 
-  if (verb >= VERBOSE)
-    MOFEM_LOG("SELF", sev) << "This finite element: "
-                           << *getNumeredEntFiniteElementPtr();
 
-  this_fe->feName = fe_name;
 
-  CHKERR this_fe->setRefineFEPtr(ptrFE);
-  CHKERR this_fe->copyBasicMethod(*getFEMethod());
-  CHKERR this_fe->copyPetscData(*getFEMethod());
-  CHKERR this_fe->copyKsp(*getFEMethod());
-  CHKERR this_fe->copySnes(*getFEMethod());
-  CHKERR this_fe->copyTs(*getFEMethod());
+  auto &fes =
+      ptrFE->mField.get_finite_elements()->get<FiniteElement_name_mi_tag>();
+  auto fe_miit = fes.find(fe_name);
+  if (fe_miit != fes.end()) {
 
-  this_fe->cacheWeakPtr = getFEMethod()->cacheWeakPtr;
+    this_fe->feName = fe_name;
 
-  CHKERR this_fe->preProcess();
+    CHKERR this_fe->setRefineFEPtr(ptrFE);
+    CHKERR this_fe->copyBasicMethod(*getFEMethod());
+    CHKERR this_fe->copyPetscData(*getFEMethod());
+    CHKERR this_fe->copyKsp(*getFEMethod());
+    CHKERR this_fe->copySnes(*getFEMethod());
+    CHKERR this_fe->copyTs(*getFEMethod());
 
-  this_fe->nInTheLoop = getNinTheLoop();
-  this_fe->loopSize = getLoopSize();
-  this_fe->numeredEntFiniteElementPtr = getNumeredEntFiniteElementPtr();
+    this_fe->cacheWeakPtr = getFEMethod()->cacheWeakPtr;
 
-  CHKERR (*this_fe)();
+    this_fe->nInTheLoop = getNinTheLoop();
+    this_fe->loopSize = getLoopSize();
 
-  CHKERR this_fe->postProcess();
+    CHKERR this_fe->preProcess();
+
+    if (fe_name == getFEName()) {
+
+      if (verb >= VERBOSE)
+        MOFEM_LOG("SELF", sev)
+            << "This finite element: " << *getNumeredEntFiniteElementPtr();
+
+      this_fe->numeredEntFiniteElementPtr = getNumeredEntFiniteElementPtr();
+      CHKERR (*this_fe)();
+    } else {
+
+      auto get_numered_fe_ptr = [&](auto &fe_uid, auto fe_ent) {
+        auto &numered_fe =
+            getFEMethod()
+                ->problemPtr->numeredFiniteElementsPtr->get<Unique_mi_tag>();
+        auto it = numered_fe.find(
+            EntFiniteElement::getLocalUniqueIdCalculate(fe_ent, fe_uid));
+        boost::shared_ptr<const NumeredEntFiniteElement> this_numered_fe_ptr;
+        if (it != numered_fe.end()) {
+          this_numered_fe_ptr = *it;
+        }
+        return this_numered_fe_ptr;
+      };
+
+      auto this_numered_fe_ptr = get_numered_fe_ptr(
+          (*fe_miit)->getFEUId(), getNumeredEntFiniteElementPtr()->getEnt());
+      if (this_numered_fe_ptr) {
+
+        if (verb >= VERBOSE)
+          MOFEM_LOG("SELF", sev)
+              << "This finite element: " << *this_numered_fe_ptr;
+
+        this_fe->numeredEntFiniteElementPtr = this_numered_fe_ptr;
+        CHKERR (*this_fe)();
+      }
+    }
+    CHKERR this_fe->postProcess();
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -2007,7 +2043,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopRange(
           auto hi = numered_fe.upper_bound(
               EntFiniteElement::getLocalUniqueIdCalculate(second, fe_uid));
           for (; lo != hi; ++lo) {
-            execute(lo, nn++);
+            CHKERR execute(lo, nn++);
           }
         }
       }
@@ -2015,6 +2051,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopRange(
     };
 
     auto execute = [&](auto lo, auto nn) {
+      MoFEMFunctionBegin;
       if (verb >= VERBOSE)
         MOFEM_LOG("SELF", sev) << "Range finite element: " << **lo;
       range_fe->nInTheLoop = nn;
@@ -2022,6 +2059,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopRange(
       CHKERR range_fe->preProcess();
       CHKERR (*range_fe)();
       CHKERR range_fe->postProcess();
+      MoFEMFunctionReturn(0);
     };
 
     CHKERR get_numered_fe_ptr((*fe_miit)->getFEUId(), fe_range, execute);

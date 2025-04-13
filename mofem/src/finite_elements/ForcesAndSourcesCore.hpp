@@ -1381,7 +1381,6 @@ struct OpLoopRange : public ForcesAndSourcesCore::UserDataOperator {
 
 protected:
   const std::string rangeFEName;
-  const int rangeDim;
   boost::shared_ptr<E> rangeFEPtr;
   const LogManager::SeverityLevel sevLevel;
   boost::shared_ptr<Range> feRange;
