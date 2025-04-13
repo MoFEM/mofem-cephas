@@ -2027,13 +2027,29 @@ struct OpScaleMatrix : public ForcesAndSourcesCore::UserDataOperator {
   using EntData = EntitiesFieldData::EntData;
   using UserOp = ForcesAndSourcesCore::UserDataOperator;
 
-  OpScaleMatrix(const std::string field_name, const double scale,
-                boost::shared_ptr<MatrixDouble> in_mat,
-                boost::shared_ptr<MatrixDouble> out_mat)
-      : UserOp(field_name, OPROW), scale(scale), inMat(in_mat),
-        outMat(out_mat) {
+  /**
+   * @deprecated Do not use this constructor
+   */
+  DEPRECATED OpScaleMatrix(const std::string field_name, const double scale,
+                           boost::shared_ptr<MatrixDouble> in_mat,
+                           boost::shared_ptr<MatrixDouble> out_mat)
+      : UserOp(field_name, OPROW), inMat(in_mat), outMat(out_mat) {
+    scalePtr = boost::make_shared<double>(scale);
     // Only is run for vertices
     std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
+    if (!inMat)
+      THROW_MESSAGE("Pointer not set for in matrix");
+    if (!outMat)
+      THROW_MESSAGE("Pointer not set for in matrix");
+  }
+
+  OpScaleMatrix(boost::shared_ptr<double> scale_ptr,
+                boost::shared_ptr<MatrixDouble> in_mat,
+                boost::shared_ptr<MatrixDouble> out_mat)
+      : UserOp(NOSPACE, OPSPACE), scalePtr(scale_ptr), inMat(in_mat),
+        outMat(out_mat) {
+    if (!scalePtr)
+      THROW_MESSAGE("Pointer not set for scale");
     if (!inMat)
       THROW_MESSAGE("Pointer not set for in matrix");
     if (!outMat)
@@ -2043,12 +2059,12 @@ struct OpScaleMatrix : public ForcesAndSourcesCore::UserDataOperator {
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
     MoFEMFunctionBegin;
     outMat->resize(inMat->size1(), inMat->size2(), false);
-    noalias(*outMat) = scale * (*inMat);
+    noalias(*outMat) = (*scalePtr) * (*inMat);
     MoFEMFunctionReturn(0);
   }
 
 private:
-  const double scale;
+  boost::shared_ptr<double> scalePtr;
   boost::shared_ptr<MatrixDouble> inMat;
   boost::shared_ptr<MatrixDouble> outMat;
 };
