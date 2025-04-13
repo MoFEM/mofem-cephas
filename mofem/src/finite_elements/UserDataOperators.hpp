@@ -433,7 +433,7 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
   #ifndef SINGULARITY
     #ifndef NDEBUG
           if (base_function != base_function) {
-            MOFEM_LOG("SELF", Sev::error) << "base finction: " << base_function;
+            MOFEM_LOG("SELF", Sev::error) << "base function: " << base_function;
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                     "Wrong number number in base functions");
           }
