@@ -35,7 +35,7 @@ int order = 1;
 auto entity_data_l2 = boost::make_shared<EntitiesFieldData>(MBENTITYSET); 
 // integrated mass matrix of post proc element
 auto mass_ptr = boost::make_shared<MatrixDouble>(); 
-// vector of coeffs shared between physical and post proc elements
+// vector of coeff shared between physical and post proc elements
 auto coeffs_ptr = boost::make_shared<MatrixDouble>();
 // data stored at
 // integration points of the physical element and evaluated at integration
@@ -45,7 +45,7 @@ fe_physics->getOpPtrVector()->push_back(new
  OpDGProjectionMassMatrix(order, mass_ptr, entity_data_l2,
   AINSWORTH_LEGENDRE_BASE, L2));
 
-// You need to call operatpor which will evalaute data_ptr
+// You need to call operator which will evaluate data_ptr
 
 fe_physics->getOpPtrVector()->push_back(new
   OpCalculateVectorFieldValues("V", data_ptr);
