@@ -973,6 +973,22 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
                               const int verb = QUIET,
                               const LogManager::SeverityLevel sev = Sev::noisy);
 
+  /**
+   * @brief Iterate over range of elements
+   *
+   * @param fe_name
+   * @param range_fe
+   * @param fe_range
+   * @param verb
+   * @param sev
+   * @return * MoFEMErrorCode
+   */
+  MoFEMErrorCode loopRange(const string &fe_name,
+                           ForcesAndSourcesCore *range_fe,
+                           boost::shared_ptr<Range> fe_range,
+                           const int verb = QUIET,
+                           const LogManager::SeverityLevel sev = Sev::noisy);
+
   /**@}*/
 
   inline ForcesAndSourcesCore *getPtrFE() const;
@@ -1337,17 +1353,53 @@ protected:
 };
 
 /**
+ * @brief Iterate over range of (sub)elements
+ * 
+ * @tparam E 
+ */
+template <typename E>
+struct OpLoopRange : public ForcesAndSourcesCore::UserDataOperator {
+
+  using UserDataOperator = ForcesAndSourcesCore::UserDataOperator;
+
+  OpLoopRange(MoFEM::Interface &m_field, const std::string fe_name,
+              boost::shared_ptr<Range> fe_range,
+              const LogManager::SeverityLevel sev = Sev::noisy)
+      : UserDataOperator(NOSPACE, OPSPACE), rangeFEPtr(new E(m_field)),
+        rangeFEName(fe_name), sevLevel(sev), feRange(fe_range) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data) {
+    return loopRange(rangeFEName, rangeFEPtr.get(), feRange, VERBOSE, sevLevel);
+  };
+
+  boost::ptr_deque<UserDataOperator> &getOpPtrVector() {
+    return rangeFEPtr->getOpPtrVector();
+  }
+
+  boost::shared_ptr<E> &getRangeFEPtr() { return rangeFEPtr; }
+
+protected:
+  const std::string rangeFEName;
+  const int rangeDim;
+  boost::shared_ptr<E> rangeFEPtr;
+  const LogManager::SeverityLevel sevLevel;
+  boost::shared_ptr<Range> feRange;
+};
+
+/**
  * \brief Copy geometry-related data from one element to other
  *
  * That can be used to copy high order geometry data from coarse element to
  * children. That is often a case when higher order geometry is defined only on
  * coarse elements.
  *
- * \note Integration points have to be located at the same gometric positions
- * 
+ * \note Integration points have to be located at the same geometric positions
+ *
  * FIXME: Write atom test
  */
-template <int DIM> struct OpCopyGeomDataToE;
+template <int DIM>
+struct OpCopyGeomDataToE;
 
 } // namespace MoFEM
 
