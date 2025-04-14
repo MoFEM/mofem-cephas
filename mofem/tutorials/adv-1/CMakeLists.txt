@@ -226,7 +226,6 @@ add_test(
   contact_3d
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_3d_4p.h5m
   -is_large_strain 0
-  -is_large_strain 1
   -base demkowicz
   -pc_type lu
   -ts_type beuler

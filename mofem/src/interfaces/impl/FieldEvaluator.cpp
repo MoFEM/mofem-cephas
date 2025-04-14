@@ -200,6 +200,11 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePointImpl(
   auto nb_eval_points = data_ptr->nbEvalPoints;
 
   for (auto tet : tree_ents) {
+    if ((type_from_handle(tet) != moab::MBTRI) &&
+        (type_from_handle(tet) != moab::MBTET)) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong element type, Field Evaluator not implimented for Quads and Hexes");
+    }
     const EntityHandle *conn;
     int num_nodes;
     CHKERR m_field.get_moab().get_connectivity(tet, conn, num_nodes, true);

@@ -140,11 +140,11 @@ where\f$ K\f$ and\f$ G\f$ are bulk and shear modulus, respectively. The coeffici
 
 Using the FTensor::Index type these formulas can be directly implemented using Einstein's summation convention as shown below, within the Example::addMatBlockOps() function:
 
-\snippet tutorials/vec-0/elastic.cpp Calculate elasticity tensor
+\snippet tutorials/vec-0/src/HookeOps.hpp Calculate elasticity tensor
 
 \note Note that depending on *SPACE_DIM* our code will appropriately sum over all the indices and set coefficient \f$ A \f$ for plane stress or 3D case.
 
-The operator `OpK` integrates the bilinear form: 
+The operator `OpKCauchy` integrates the bilinear form: 
 
 \f[
 \begin{align}
@@ -153,9 +153,9 @@ The operator `OpK` integrates the bilinear form:
 \f]
 
 and subsequently assembles it into global system matrix \f$ \mathbf K \f$.
-Note that once again, a new operator does not have to be defined as `OpK` is simply an alias to existing operator from MoFEM's repertoire. To that operator we are passing previously defined container that stores elasticity tensor \f$ \mathbb D \f$.
+Note that once again, a new operator does not have to be defined as `OpKCauchy` is simply an alias to existing operator from MoFEM's repertoire. To that operator we are passing previously defined container that stores elasticity tensor \f$ \mathbb D \f$.
 
-\snippet tutorials/vec-0/elastic.cpp OpK
+\snippet tutorials/vec-0/src/HookeOps.hpp OpK
 
 The utilised `OpGradSymTensorGrad` form integrator template of Bilinear Form has four parameters: rank of the base, rank of row field, rank of the column field and finally, the increment of elasticity tensor, which in case of homogeneous material can be set to 0.
 
@@ -164,7 +164,8 @@ More info about available Form Integrators can be found in \ref user_data_operat
 \subsubsection tutorial_elastic_internal_force_matrix Pushing internal forces
 
 The next part of the Example::assembleSystem() function calculates the internal forces for the system which is required to enforce the boundary conditions (defined as \f$ \mathbf K \mathbf u_e \f$ refer to \ref basic_tutorials_poisson_homogeneous for an in depth description). For elastic problems, this requires calculating the displacement gradient \f$ \nabla \mathbf u \f$, strain \f$ \boldsymbol \varepsilon \f$ and stress \f$ \boldsymbol \sigma \f$ of the system by pushing the relevant operatiors to the RHS pipeline.
-\snippet tutorials/vec-0/elastic.cpp Push Internal forces
+
+\snippet tutorials/vec-0/src/HookeOps.hpp Push Internal forces
 This is achieved by pushing a series of operators as follows:
 - `OpCalculateVectorFieldGradient` computes the gradient of the displacement field \f$ \nabla \mathbf u^{h}=\sum_{m=0}^{N-1} \nabla \phi_m \bar{\mathbf u}_m \f$
 - `OpSymmetrizeTensor` symmetrises the previously computed gradient to compute small strain tensor \f$ \boldsymbol \varepsilon = \frac{1}{2} (\nabla \mathbf u^\text{T} + \nabla \mathbf u)  \f$

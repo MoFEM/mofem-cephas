@@ -117,7 +117,7 @@ struct Monitor : public FEMethod {
           boost::make_shared<PostProcEleDomain>(*m_field_ptr, postProcMesh);
       auto &pip = post_proc_fe->getOpPtrVector();
       // Get common data pointer (either Hooke or Hencky)
-      auto [hencky_or_hook_common_data_ptr, contact_stress_ptr] =
+      auto [hencky_or_hooke_common_data_ptr, contact_stress_ptr] =
           push_domain_ops(get_domain_pip(pip));
 
       auto u_ptr = boost::make_shared<MatrixDouble>();
@@ -163,7 +163,7 @@ struct Monitor : public FEMethod {
                   {{"HENCKY_STRAIN", common_data_ptr->getMatLogC()}}));
             }
           },
-          hencky_or_hook_common_data_ptr);
+          hencky_or_hooke_common_data_ptr);
 
       if (SPACE_DIM == 3) {
 
@@ -217,7 +217,7 @@ struct Monitor : public FEMethod {
               ForcesAndSourcesCore::UserDataOperator::AdjCache>());
       pip.push_back(op_loop_side);
 
-      auto [hencky_common_data_ptr, contact_stress_ptr] =
+      auto [hencky_or_hooke_common_data_ptr, contact_stress_ptr] =
           push_domain_ops(op_loop_side->getOpPtrVector());
 
       auto X_ptr = boost::make_shared<MatrixDouble>();

@@ -51,15 +51,15 @@ add_test(
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/elastic_2d_schur
   -file_name part.h5m -order 4
-  -ksp_rtol 1e-12 -ksp_atol 1e-12 -ksp_type fgmres -test -log_no_color)
+  -ksp_rtol 1e-12 -ksp_atol 1e-12 -ksp_type fgmres -test 1 -log_no_color)
 
 #E1 = 50, E2 = 30, E3 = 10; nu1 = 0.3, nu2 = 0.18, nu3 = 0.06
 add_test(
   elastic_uniaxial
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/elastic_2d
-  -file_name uniaxialMembrane_2d.cub -order 2
-  -ksp_rtol 1e-12 -ksp_atol  1e-12 -pc_type lu -test)
+  -file_name uniaxialMembrane_2d.cub -order 4
+  -ksp_rtol 1e-12 -ksp_atol  1e-12 -pc_type lu -field_eval_coords 4.5,2.5 -test 2)
 
 
 add_test(
@@ -67,21 +67,21 @@ add_test(
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/elastic_2d
   -file_name LShape_Rot_MPC_link.cub -order 2 
-  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test -log_no_color -pc_type lu)
+  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test 1 -log_no_color -pc_type lu)
 
 add_test(
   elastic_mpc_master_only
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/elastic_2d
   -file_name LShape_Rot_MPC_link_master.cub -order 2 
-  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test -log_no_color -pc_type lu)
+  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test 1 -log_no_color -pc_type lu)
 
 add_test(
   elastic_3d_rotation0
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/elastic_3d_schur
   -file_name LShape_Rot_D0.cub -order 4
-  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test -log_no_color)
+  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test 1 -log_no_color)
 
 add_test(
   elastic_3d_rotation_blockset
@@ -89,7 +89,7 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/elastic_3d_schur
   -file_name LShape_Rot_D1.cub -order 4
   -fieldsplit_1_pc_type cg -fieldsplit_1_pc_type lu 
-  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test -log_no_color)
+  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test 1 -log_no_color)
 
 add_test(
   elastic_3d_dam_fluid_pressure
@@ -97,4 +97,4 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/elastic_3d_schur
   -file_name dam.cub -order 4
   -fieldsplit_1_pc_type cg -fieldsplit_1_pc_type lu 
-  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test -log_no_color)
+  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test 1 -log_no_color)

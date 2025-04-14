@@ -637,10 +637,9 @@ MoFEMErrorCode Example::checkResults() {
   MOFEM_LOG_CHANNEL("WORLD");
   MOFEM_LOG_C("WORLD", Sev::inform, "residual = %3.4e\n", nrm2);
 
-  PetscBool test = PETSC_FALSE;
-  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-test", &test, PETSC_NULL);
-  if (test == PETSC_TRUE) {
-
+  int test = 0;
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-test", &test, PETSC_NULL);
+  if (test > 0) {
     auto post_proc_residual = [&](auto dm, auto f_res, auto out_name) {
       MoFEMFunctionBegin;
       auto post_proc_fe =
@@ -676,7 +675,17 @@ MoFEMErrorCode Example::checkResults() {
       SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
               "Residual is not zero");
   }
-
+  if (test == 2){
+    auto t_disp = getFTensor1FromMat<SPACE_DIM>(*vectorFieldPtr);
+    double Ux_ref = 0.46;
+    double Uy_ref = -0.015;
+    constexpr double eps = 1e-8;
+    if (fabs(t_disp(0) - Ux_ref) > eps ||
+        fabs(t_disp(1) - Uy_ref) > eps) {
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+              "Atom test failed");
+    }
+  }
   MoFEMFunctionReturn(0);
 }
 //! [Check]

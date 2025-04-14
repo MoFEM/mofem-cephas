@@ -202,21 +202,18 @@ MoFEMErrorCode opFactoryDomainRhs(
     std::string field_name, boost::shared_ptr<HookeOps::CommonData> common_ptr,
     Sev sev, bool is_non_linear = false) {
   MoFEMFunctionBegin;
-
+  //! [Push Internal forces]
   using B = typename FormsIntegrators<DomainEleOp>::template Assembly<
       A>::template LinearForm<I>;
   using OpInternalForce =
       typename B::template OpGradTimesSymTensor<1, DIM, DIM>;
 
-if(is_non_linear){
-  pip.push_back(new OpInternalForce(
-      "U", common_ptr->getMatCauchyStress(),
-      [&](double, double, double) constexpr { return 1; }));}
-else{
-  pip.push_back(new OpInternalForce(
-      field_name, common_ptr->getMatCauchyStress(),
-      [&](double, double, double) constexpr { return -1; }));}
-
+  pip.push_back(
+      new OpInternalForce(field_name, common_ptr->getMatCauchyStress(),
+                          [is_non_linear](double, double, double) constexpr {
+                            return (is_non_linear ? 1 : -1);
+                          }));
+  //! [Push Internal forces]
   MoFEMFunctionReturn(0);
 }
 // Overloaded RHS factory for scaling
@@ -242,11 +239,12 @@ MoFEMErrorCode opFactoryDomainLhs(
     std::string field_name, boost::shared_ptr<HookeOps::CommonData> common_ptr,
     Sev sev) {
   MoFEMFunctionBegin;
-
+  //! [OpK]
   using B = typename FormsIntegrators<DomainEleOp>::template Assembly<
       A>::template BiLinearForm<I>;
-  using OpKCauchy = typename B::template OpGradSymTensorGrad<1, DIM, DIM, 0>;
 
+  using OpKCauchy = typename B::template OpGradSymTensorGrad<1, DIM, DIM, 0>;
+  //! [OpK]
   // Assumes constant D matrix per entity
   pip.push_back(new OpKCauchy(field_name, field_name, common_ptr->matDPtr));
 

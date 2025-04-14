@@ -441,7 +441,7 @@ MoFEMErrorCode Contact::createCommonData() {
   Simple *simple = mField.getInterface<Simple>();
   auto dm = simple->getDM();
   monitorPtr =
-      boost::make_shared<Monitor>(dm, scale, mfrontInterface, is_axisymmetric);
+      boost::make_shared<Monitor>(dm, scale, mfrontInterface, is_axisymmetric, is_large_strain);
 
   if (use_mfront) {
     mfrontInterface->setMonitorPtr(monitorPtr);
@@ -543,9 +543,11 @@ MoFEMErrorCode Contact::OPs() {
 
     if (!mfrontInterface) {
       if (!is_large_strain) {
+        std::cout<<"HookeOps::opFactoryDomainLhs" << std::endl;
         CHKERR HookeOps::opFactoryDomainLhs<SPACE_DIM, AT, IT, DomainEleOp>(
             mField, pip, "U", "MAT_ELASTIC", Sev::verbose, scale);
       } else {
+        std::cout<<"HenckyOps::opFactoryDomainLhs" << std::endl;
         CHKERR HenckyOps::opFactoryDomainLhs<SPACE_DIM, AT, IT, DomainEleOp>(
             mField, pip, "U", "MAT_ELASTIC", Sev::verbose, scale);
       }
