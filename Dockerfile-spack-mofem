@@ -4,7 +4,7 @@ LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk,Andrei.Shvarts@glasgow.ac.uk"
 
 # clone MoFEM core and ep module
 RUN cd $MOFEM_INSTALL_DIR/ && \
-  git clone -b lukasz/eshelby https://bitbucket.org/mofem/mofem-cephas.git && \
+  git clone -b andrei/mos_demo https://bitbucket.org/mofem/mofem-cephas.git && \
   git clone -b develop https://bitbucket.org/mofem/users-modules-cephas.git mofem-cephas/mofem/users_modules && \
   git clone -b lukasz/eshelby https://bitbucket.org/mofem/um_eshelbian_plasticity.git mofem-cephas/mofem/users_modules/eshelbian_plasticity
 
