@@ -441,7 +441,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
         case MBTET: {
           int ii = 0;
           for (int ee = 0; ee != num_ele; ee++) {
-            EntityHandle n[4];
+            EntityHandle n[num_nod_per_ele];
             for (int nn = 0; nn != num_nod_per_ele; nn++) {
               // conn_moab[ii] = verts[conn_med[ii]-1];
               n[nn] = verts[conn_med[ii + nn] - 1];
@@ -656,7 +656,7 @@ MoFEMErrorCode MedInterface::readMed(int verb) {
   if (medFileName.empty()) {
     CHKERR getFileNameFromCommandLine(verb);
   }
-  CHKERR readMed(medFileName, verb);
+  CHKERR readMed(medFileName, 100);
   MoFEMFunctionReturn(0);
 }
 
