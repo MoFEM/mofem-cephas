@@ -431,7 +431,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
         case MBTET: {
           int ii = 0;
           for (int ee = 0; ee != num_ele; ee++) {
-            EntityHandle n[num_nod_per_ele];
+            std::vector<EntityHandle> n(num_nod_per_ele);
             for (int nn = 0; nn != num_nod_per_ele; nn++) {
               n[nn] = verts[conn_med[ii + nn] - 1];
             }
