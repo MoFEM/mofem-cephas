@@ -380,15 +380,8 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
                                     MED_NODE, MED_NO_GEOTYPE,
                                     &nodes_tags[0]) < 0) {
       nodes_tags.clear();
-      // SETERRQ(
-      //   m_field.get_comm(),
-      //   MOFEM_OPERATION_UNSUCCESSFUL,
-      //   "No family number for elements: using 0 as default family number"
-      // );
     }
     for (int i = 0; i < num_nodes; i++) {
-      // cerr << verts[i] << " " /*<< ele_tags[j] << " "*/ << nodes_tags[i] <<
-      // endl;
       family_elem_map[nodes_tags.empty() ? i : nodes_tags[i]].insert(verts[i]);
     }
   }
@@ -426,9 +419,6 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
                 "Could not read MED elements");
       }
 
-      // cerr << "type " << ent_type << " ";
-      // cerr << "num_ele " << num_ele << " " << num_nod_per_ele << endl;;
-
       Range ents;
 
       if (ent_type != MBVERTEX) {
@@ -441,9 +431,8 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
         case MBTET: {
           int ii = 0;
           for (int ee = 0; ee != num_ele; ee++) {
-            EntityHandle n[4];
+            EntityHandle n[num_nod_per_ele];
             for (int nn = 0; nn != num_nod_per_ele; nn++) {
-              // conn_moab[ii] = verts[conn_med[ii]-1];
               n[nn] = verts[conn_med[ii + nn] - 1];
             }
 
@@ -465,10 +454,8 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
           int ii = 0;
           for (int ee = 0; ee != num_ele; ee++) {
             for (int nn = 0; nn != num_nod_per_ele; nn++, ii++) {
-              // cerr << conn_med[ii] << " ";
               conn_moab[ii] = verts[conn_med[ii] - 1];
             }
-            // cerr << endl;
           }
         }
         }
@@ -497,14 +484,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
                   "No family number for elements: using 0 as default family "
                   "number");
         }
-        // std::vector<med_int> ele_tags(num_ele);
-        // if(MEDmeshEntityNumberRd(
-        //   fid, mesh_name,MED_NO_DT,MED_NO_IT,MED_CELL,type,&ele_tags[0]) < 0
-        // ) {
-        //   ele_tags.clear();
-        // }
         for (int j = 0; j < num_ele; j++) {
-          // cerr << ents[j] << " " /*<< ele_tags[j] << " "*/ << fam[j] << endl;
           family_elem_map[fam[j]].insert(ents[j]);
         }
       }
@@ -523,7 +503,6 @@ MoFEMErrorCode
 MedInterface::readFamily(const string &file, const int index,
                          const std::map<int, Range> &family_elem_map,
                          std::map<string, Range> &group_elem_map, int verb) {
-  //
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -587,7 +566,6 @@ MedInterface::readFamily(const string &file, const int index,
       }
     }
 
-    // cerr << family_name << " " << family_num  << " " << num_groups << endl;
     for (int g = 0; g != num_groups; g++) {
       std::string name =
           std::string(&group_names[MED_LNAME_SIZE * g], MED_LNAME_SIZE - 1);
@@ -601,7 +579,6 @@ MedInterface::readFamily(const string &file, const int index,
             family_num);
       } else {
         group_elem_map[name].merge(family_elem_map.at(family_num));
-        // cerr << string(&group_names[MED_LNAME_SIZE*g]) << endl;
       }
     }
   }
@@ -656,7 +633,7 @@ MoFEMErrorCode MedInterface::readMed(int verb) {
   if (medFileName.empty()) {
     CHKERR getFileNameFromCommandLine(verb);
   }
-  CHKERR readMed(medFileName, verb);
+  CHKERR readMed(medFileName, 100);
   MoFEMFunctionReturn(0);
 }
 
@@ -1108,8 +1085,6 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
     if (!load_series && only_step != step)
       continue;
 
-    // cerr << only_step << " " << step << endl;
-
     // FIXME: in MED3 we might want to loop over all profiles instead
     // of relying of the default one
 
@@ -1142,14 +1117,6 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
       if (numVal <= 0)
         continue;
 
-      // int mult = 1;
-      // if(ent == MED_NODE_ELEMENT) {
-      //  mult = nodesPerEle[pairs[pair].second];
-      //}
-      // else if(ngauss != 1){
-      //  mult = ngauss;
-      //}
-
       // read field data
       std::vector<double> val(numVal * num_comp);
       if (MEDfieldValueWithProfileRd(fid, field_name.c_str(), numdt, numit, ent,
@@ -1159,14 +1126,6 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
         SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
                 "Could not read field values");
       }
-
-      // if (verb > 2) {
-      //   // FIXME: This not looks ok for me
-      //   cerr << ent << " " << ele << endl;
-      //   cerr << string(meshName) << " : " << string(profileName) << " : "
-      //        << string(locName) << " : " << profileSize << " : " << ngauss
-      //        << endl;
-      // }
 
       switch (ent) {
       case MED_CELL: {
@@ -1219,12 +1178,6 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
             }
           }
         }
-        // SETERRQ1(
-        //   m_field.get_comm(),
-        //   MOFEM_NOT_IMPLEMENTED,
-        //   "Not implemented for more gauss pts ngauss = %d",
-        //   ngauss
-        // );
       } break;
       case MED_NODE:
       case MED_NODE_ELEMENT: {
@@ -1258,13 +1211,6 @@ std::ostream &operator<<(std::ostream &os,
   os << " mesh name: " << field_data.meshName;
   os << " local mesh: " << ((field_data.localMesh) ? "true" : "false");
   os << std::endl;
-  // os << " field type: ";
-  // switch (field_data.fieldType) {
-  //   case MED_FLOAT64: os << "MED_FLOAT64"; break;
-  //   case MED_INT32: os << "MED_INT32"; break;
-  //   case MED_INT64: os << "MED_INT64"; break;
-  //   case MED_INT: os << "MED_INT"; break;
-  // };
   os << " componentNames:";
   for (unsigned int ff = 0; ff != field_data.componentNames.size(); ff++) {
     os << " " << field_data.componentNames[ff];
