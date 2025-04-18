@@ -633,7 +633,7 @@ MoFEMErrorCode MedInterface::readMed(int verb) {
   if (medFileName.empty()) {
     CHKERR getFileNameFromCommandLine(verb);
   }
-  CHKERR readMed(medFileName, 100);
+  CHKERR readMed(medFileName, verb);
   MoFEMFunctionReturn(0);
 }
 
