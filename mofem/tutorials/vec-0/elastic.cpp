@@ -259,6 +259,16 @@ MoFEMErrorCode Example::readMesh() {
   auto simple = mField.getInterface<Simple>();
   CHKERR simple->getOptions();
   CHKERR simple->loadFile();
+  // Add meshsets if config file provided
+  MeshsetsManager *meshsets_interface_ptr;
+  CHKERR mField.getInterface(meshsets_interface_ptr);
+  CHKERR meshsets_interface_ptr->setMeshsetFromFile();
+  MOFEM_LOG("WORLD", Sev::inform)
+      << "Print all meshsets (old and added from meshsets "
+         "configurational file)";
+  for (auto cit = meshsets_interface_ptr->getBegin();
+       cit != meshsets_interface_ptr->getEnd(); cit++)
+    MOFEM_LOG("WORLD", Sev::inform) << *cit;
   MoFEMFunctionReturn(0);
 }
 //! [Read mesh]
