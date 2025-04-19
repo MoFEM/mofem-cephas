@@ -62,7 +62,7 @@ set_target_properties(
 #   -log_no_color)
 
 add_test(
-  cookes_membranme_2d
+  cookes_membrane_2d
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   incompressible_2d_petsc
   -order 2

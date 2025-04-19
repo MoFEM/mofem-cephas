@@ -849,7 +849,7 @@ MoFEMErrorCode Contact::tsSolve() {
 //! [Check]
 MoFEMErrorCode Contact::checkResults() {
   MoFEMFunctionBegin;
-
+  if (atom_test && !mField.get_comm_rank()) {
     const double *t_ptr;
     CHKERR VecGetArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
     double hertz_force;
