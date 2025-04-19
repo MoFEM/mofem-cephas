@@ -60,4 +60,26 @@ set_target_properties(
 #   -ts_max_time 1 -ts_dt 0.2 
 #   -spring_stiffness 0.1
 #   -log_no_color)
+
+add_test(
+  cookes_membranme_2d
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  incompressible_2d_petsc
+  -order 2
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_2d.h5m
+  -is_discontinuous_pressure 1
+  -ksp_monitor
+  -snes_monitor
+  -young_modulus 240.5656
+  -poisson_ratio 0.4999
+  -post_proc_vol 1 
+  -post_proc_skin 0
+  -eps_stab 0.
+  -ts_max_time 1 -ts_dt 0.2
+  -is_a_t_petsc_fieldsplit 1
+  -pc_type lu
+  -field_eval_coords 48,60
+  -plane_strain 1 
+  -atom_test 1
+  )
   

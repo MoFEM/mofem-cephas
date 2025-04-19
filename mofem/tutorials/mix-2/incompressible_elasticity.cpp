@@ -28,15 +28,6 @@ using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
 using SkinPostProcEle = PostProcBrokenMeshInMoab<BoundaryEle>;
 using SetPtsData = FieldEvaluatorInterface::SetPtsData;
 
-// struct DomainBCs {};
-// struct BoundaryBCs {};
-
-// using DomainRhsBCs = NaturalBC<DomainEleOp>::Assembly<AT>::LinearForm<IT>;
-// using OpDomainRhsBCs = DomainRhsBCs::OpFlux<DomainBCs, 1, SPACE_DIM>;
-// using BoundaryRhsBCs = NaturalBC<BoundaryEleOp>::Assembly<AT>::LinearForm<IT>;
-// using OpBoundaryRhsBCs = BoundaryRhsBCs::OpFlux<BoundaryBCs, 1, SPACE_DIM>;
-// using BoundaryLhsBCs = NaturalBC<BoundaryEleOp>::Assembly<AT>::BiLinearForm<IT>;
-// using OpBoundaryLhsBCs = BoundaryLhsBCs::OpFlux<BoundaryBCs, 1, SPACE_DIM>;
 
 PetscBool doEvalField;
 struct MonitorIncompressible : public FEMethod {
@@ -95,7 +86,7 @@ struct MonitorIncompressible : public FEMethod {
       if (postProcFe) {
         CHKERR DMoFEMLoopFiniteElements(dM, "dFE", postProcFe,
                                         getCacheWeakPtr());
-        CHKERR postProcFe->writeFile("out_incomp_elasticity" +
+        CHKERR postProcFe->writeFile("out_incomp_elasticity_" +
                                      boost::lexical_cast<std::string>(ts_step) +
                                      ".h5m");
       }
@@ -210,6 +201,7 @@ private:
   std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uXScatter;
   std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uYScatter;
   std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uZScatter;
+  std::array<double, SPACE_DIM> fieldEvalCoords;
 };
 
 template <int DIM>
@@ -293,6 +285,10 @@ MoFEMErrorCode Incompressible::setupProblem() {
   PetscInt choice_base_value = AINSWORTH;
   CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
                               LASBASETOPT, &choice_base_value, PETSC_NULL);
+  int coords_dim = SPACE_DIM;
+  CHKERR PetscOptionsGetRealArray(NULL, NULL, "-field_eval_coords",
+                                  fieldEvalCoords.data(), &coords_dim,
+                                  &doEvalField);
 
   FieldApproximationBase base;
   switch (choice_base_value) {
@@ -705,12 +701,6 @@ MoFEMErrorCode Incompressible::tsSolve() {
   boost::shared_ptr<SetPtsData> field_eval_data;
   boost::shared_ptr<MatrixDouble> vector_field_ptr;
 
-  std::array<double, SPACE_DIM> field_eval_coords;
-  int coords_dim = SPACE_DIM;
-  CHKERR PetscOptionsGetRealArray(NULL, NULL, "-field_eval_coords",
-                                  field_eval_coords.data(), &coords_dim,
-                                  &doEvalField);
-
   if (doEvalField) {
     vector_field_ptr = boost::make_shared<MatrixDouble>();
     field_eval_data =
@@ -718,7 +708,7 @@ MoFEMErrorCode Incompressible::tsSolve() {
     CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree<SPACE_DIM>(
         field_eval_data, simple->getDomainFEName());
 
-    field_eval_data->setEvalPoints(field_eval_coords.data(), 1);
+    field_eval_data->setEvalPoints(fieldEvalCoords.data(), 1);
     auto no_rule = [](int, int, int) { return -1; };
     auto field_eval_fe_ptr = field_eval_data->feMethodPtr.lock();
     field_eval_fe_ptr->getRuleHook = no_rule;
@@ -731,7 +721,7 @@ MoFEMErrorCode Incompressible::tsSolve() {
     boost::shared_ptr<MonitorIncompressible> monitor_ptr(
         new MonitorIncompressible(SmartPetscObj<DM>(dm, true),
                                   create_post_process_elements(), uXScatter,
-                                  uYScatter, uZScatter, field_eval_coords,
+                                  uYScatter, uZScatter, fieldEvalCoords,
                                   field_eval_data, vector_field_ptr));
     boost::shared_ptr<ForcesAndSourcesCore> null;
     CHKERR DMMoFEMTSSetMonitor(dm, solver, simple->getDomainFEName(),
@@ -859,7 +849,75 @@ MoFEMErrorCode Incompressible::tsSolve() {
 //! [Solve]
 
 //! [Check]
-MoFEMErrorCode Incompressible::checkResults() { return 0; }
+MoFEMErrorCode Incompressible::checkResults() {
+  MoFEMFunctionBegin;
+
+  int atom_test = 0;
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
+                            PETSC_NULL);
+  double eps = 1e-6;
+  double Ux_ref, Uy_ref, Uz_ref;
+
+  if (atom_test && !mField.get_comm_rank()) {
+    if (doEvalField) {
+      auto vector_field_ptr = boost::make_shared<MatrixDouble>();
+
+      auto field_eval_data =
+          mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
+      CHKERR mField.getInterface<FieldEvaluatorInterface>()
+          ->buildTree<SPACE_DIM>(
+            field_eval_data, mField.getInterface<Simple>()->getDomainFEName());
+
+            field_eval_data->setEvalPoints(fieldEvalCoords.data(), 1);
+      auto no_rule = [](int, int, int) { return -1; };
+      auto field_eval_fe_ptr = field_eval_data->feMethodPtr.lock();
+      field_eval_fe_ptr->getRuleHook = no_rule;
+      field_eval_fe_ptr->getOpPtrVector().push_back(
+          new OpCalculateVectorFieldValues<SPACE_DIM>("U", vector_field_ptr));
+  
+      CHKERR mField.getInterface<FieldEvaluatorInterface>()
+          ->evalFEAtThePoint<SPACE_DIM>(
+              fieldEvalCoords.data(), 1e-12,
+              mField.getInterface<Simple>()->getProblemName(),
+              mField.getInterface<Simple>()->getDomainFEName(), field_eval_data,
+              mField.get_comm_rank(), mField.get_comm_rank(), nullptr, MF_EXIST,
+              QUIET);
+
+      if (vector_field_ptr->size1()) {
+        auto t_disp = getFTensor1FromMat<SPACE_DIM>(*vector_field_ptr);
+        switch (atom_test) {
+        case 1: // Cooke's Membrane
+          Ux_ref = -5.89757;
+          Uy_ref = 8.15644;
+          Uz_ref = 0.0;
+          break;
+        default:
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+                   "atom test %d does not exist", atom_test);
+        }
+
+        auto calculate_error = [](double computed, double reference,
+                                 double tolerance) {
+          return fabs(computed - reference) > tolerance * fabs(reference);
+        };
+
+        if (calculate_error(t_disp(0), Ux_ref, eps) ||
+            calculate_error(t_disp(1), Uy_ref, eps) ||
+            (SPACE_DIM == 3 && calculate_error(t_disp(2), Uz_ref, eps))) {
+          SETERRQ3(
+              PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              "atom test %d failed: Wrong Displacement Output: %3.6e != %3.6e",
+              atom_test, Ux_ref, t_disp(0));
+        }
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+                "atom test: field eval coords may outsiode the domain");
+      }
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
 //! [Check]
 
 static char help[] = "...\n\n";
