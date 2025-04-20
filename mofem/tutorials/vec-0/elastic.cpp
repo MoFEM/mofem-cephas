@@ -309,6 +309,100 @@ MoFEMErrorCode Example::setupProblem() {
   };
   CHKERR project_ho_geometry();
 
+  double ref_threshold = 1e-4;
+  PetscBool ref_flg = PETSC_FALSE;
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-ref_ho", &ref_flg, PETSC_NULL);
+  CHKERR PetscOptionsGetReal(PETSC_NULL, "", "-ref_ho_threshold",
+                             &ref_threshold, PETSC_NULL);
+  if (ref_flg) {
+
+    auto get_ents_to_refine = [&]() {
+      auto LoCoordsPtr = boost::make_shared<MatrixDouble>();
+      Range outer_ref_ents;
+
+      auto *op_ptr = new BoundaryEleOp(NOSPACE, BoundaryEleOp::OPSPACE);
+      op_ptr->doWorkRhsHook = [&](DataOperator *base_op_ptr, int side,
+        EntityType type,
+        EntitiesFieldData::EntData &data) {
+          MoFEMFunctionBegin;
+          auto op_ptr = static_cast<BoundaryEleOp *>(base_op_ptr);
+          *LoCoordsPtr = op_ptr->getCoordsAtGaussPts();
+          MoFEMFunctionReturn(0);
+        };
+        
+      auto *op_ptr_ho = new BoundaryEleOp(NOSPACE, BoundaryEleOp::OPSPACE);
+      op_ptr_ho->doWorkRhsHook = [&](DataOperator *base_op_ptr, int side,
+                                     EntityType type,
+                                     EntitiesFieldData::EntData &data) {
+        MoFEMFunctionBegin;
+        auto op_ptr_ho = static_cast<BoundaryEleOp *>(base_op_ptr);
+        auto fe_ent = op_ptr_ho->getFEEntityHandle();
+        FTensor::Index<'i', 3> i;
+        MatrixDouble lo_mat = trans(*LoCoordsPtr);
+        MatrixDouble ho_mat = trans(op_ptr_ho->getCoordsAtGaussPts());
+        auto t_lo_coords = getFTensor1FromMat<SPACE_DIM>(lo_mat);
+        auto t_ho_coords = getFTensor1FromMat<SPACE_DIM>(ho_mat);
+        auto t_w = op_ptr_ho->getFTensor0IntegrationWeight();
+        double err_int = 0;
+        const auto nb_gauss_pts = op_ptr_ho->getGaussPts().size2();
+        // E = sqrt( int (x-xh)*(x-xh) da )  / face_area
+        for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
+          err_int += t_w * ((t_lo_coords(i) - t_ho_coords(i)) *
+                            (t_lo_coords(i) - t_ho_coords(i)));
+          ++t_lo_coords;
+          ++t_ho_coords;
+          ++t_w;
+        }
+        const double err_measure = sqrt(err_int) / op_ptr_ho->getMeasure();
+        // std::cout << "The err_measure for element: " << fe_ent << " is "
+        //           << err_measure << std::endl;
+        if (err_measure > ref_threshold)
+          outer_ref_ents.insert(fe_ent);
+
+        MoFEMFunctionReturn(0);
+      };
+
+      auto fe = boost::make_shared<BoundaryEle>(mField);
+      fe->getOpPtrVector().push_back(op_ptr);
+
+      CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
+          fe->getOpPtrVector(), {NOSPACE}, "GEOMETRY");
+      fe->getOpPtrVector().push_back(op_ptr_ho);
+      auto dm = simple->getDM();
+      CHK_THROW_MESSAGE(
+          DMoFEMLoopFiniteElements(dm, simple->getBoundaryFEName(), fe),
+          "calc metric");
+      return outer_ref_ents;
+    };
+
+    auto ents_to_ref = get_ents_to_refine();
+    Range all_boundary_ents;
+    CHKERR mField.get_moab().get_entities_by_handle(
+        simple->getBoundaryMeshSet(), all_boundary_ents);
+    Range all_domain_ents;
+    CHKERR mField.get_moab().get_entities_by_handle(simple->getMeshset(),
+                                                    all_domain_ents);
+
+    // std::cout << "My ents to refine are " << ents_to_ref << "\n";
+    Range tets_to_refine[2];
+    CHKERR mField.get_moab().get_adjacencies(
+      ents_to_ref, SPACE_DIM, false, tets_to_refine[0], moab::Interface::UNION);
+    Range ent_conn;
+    CHKERR mField.get_moab().get_adjacencies(
+      tets_to_refine[0], SPACE_DIM - 1, true, ent_conn, moab::Interface::UNION);
+    CHKERR mField.get_moab().get_adjacencies(
+        ent_conn, SPACE_DIM, true, tets_to_refine[1], moab::Interface::UNION);
+
+    CHKERR CutMeshInterface::SaveData(mField.get_moab())(
+        "ents_to_refine_ho_2.vtk", subtract(tets_to_refine[1], tets_to_refine[0]));
+    CHKERR CutMeshInterface::SaveData(mField.get_moab())(
+        "ents_to_refine_ho_3.vtk", tets_to_refine[0]);
+    CHKERR mField.set_field_order(all_domain_ents,   "GEOMETRY", 1);
+    CHKERR mField.set_field_order(subtract(tets_to_refine[1], tets_to_refine[0]), "GEOMETRY", 2);
+    CHKERR mField.set_field_order(tets_to_refine[0], "GEOMETRY", 3);
+    CHKERR simple->reSetUp();
+  }
+
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-plane_strain", &is_plane_strain,
                              PETSC_NULL);
 
