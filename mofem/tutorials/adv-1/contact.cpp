@@ -175,7 +175,7 @@ MoFEMErrorCode Contact::setupProblem() {
   MoFEMFunctionBegin;
   Simple *simple = mField.getInterface<Simple>();
 
-  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_large_strain", &is_large_strain,
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-large_strain", &is_large_strain,
                              PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-contact_order", &contact_order,

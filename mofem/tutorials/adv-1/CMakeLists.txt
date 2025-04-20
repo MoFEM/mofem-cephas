@@ -146,7 +146,7 @@ add_test(
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_2d
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
-  -is_large_strain 0
+  -large_strain 0
   -pc_type lu
   -ts_type beuler
   -ts_max_time 1 -ts_dt 1
@@ -161,7 +161,7 @@ add_test(
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_2d_schur
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
-  -is_large_strain 0
+  -large_strain 0
   -pc_type fieldsplit
   -mofem_mg_levels 2
   -order 2 
@@ -173,16 +173,15 @@ add_test(
   -sdf_file ./sdf_files/sdf_hertz_2d_plane.py
   -young_modulus 1e3
   -poisson_ratio 0.4
-  -is_large_strain 1
   -atom_test 1
 )
 
 add_test(
-  hertz_3D
+  hertz_3d_petsc
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_3d
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
-  -is_large_strain 0
+  -large_strain 0
   -pc_type lu
   -ts_type beuler
   -ts_max_time 1 
@@ -198,7 +197,7 @@ add_test(
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_3d_schur
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
-  -is_large_strain 0
+  -large_strain 0
   -snes_max_it 40
   -ksp_atol 1e-10
   -ksp_rtol 1e-8
@@ -217,15 +216,14 @@ add_test(
   -young_modulus 1e3
   -poisson_ratio 0.4
   -atom_test 3
-
 )
 
 add_test(
-  wavy_3D
+  wavy_3d
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_3d
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_3d_4p.h5m
-  -is_large_strain 0
+  -large_strain 1
   -base demkowicz
   -pc_type lu
   -ts_type beuler

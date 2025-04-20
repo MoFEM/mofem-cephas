@@ -203,7 +203,7 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePointImpl(
     if ((type_from_handle(tet) != moab::MBTRI) &&
         (type_from_handle(tet) != moab::MBTET)) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Wrong element type, Field Evaluator not implimented for Quads and Hexes");
+              "Wrong element type, Field Evaluator not implemented for Quads and Hexes");
     }
     const EntityHandle *conn;
     int num_nodes;
