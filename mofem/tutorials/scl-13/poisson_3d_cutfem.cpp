@@ -32,7 +32,7 @@ using PostProcEle =  PostProcBrokenMeshInMoab<DomainEle>;
 static double penalty = 1e6;
 static double phi = -1; // 1 - symmetric Nitsche, 0 - nonsymmetric, -1 antisymmetrica
 static double nitsche = 1;
-static unsigned int max_ref_level = 5;
+static unsigned int max_ref_level = 4;
 
 #include <EntityRefine.hpp>
 #include <PoissonCutFEM.hpp>
@@ -116,6 +116,10 @@ MoFEMErrorCode Poisson3DCutFEM::readMesh() {
 
   CHKERR mField.getInterface(simpleInterface);
   CHKERR simpleInterface->getOptions();
+
+  simpleInterface->getAddSkeletonFE() = true;
+  simpleInterface->getAddBoundaryFE() = true;
+
   CHKERR simpleInterface->loadFile();
 
   char immersed_mesh_file_name[255];
@@ -146,6 +150,10 @@ MoFEMErrorCode Poisson3DCutFEM::setupProblem() {
   MOFEM_LOG("WORLD", Sev::inform) << "Set test: " << (is_test == PETSC_TRUE);
 
   CHKERR simpleInterface->addDomainField(domainField, H1, DEMKOWICZ_JACOBI_BASE,
+                                         1);
+  CHKERR simpleInterface->addSkeletonField(domainField, H1, DEMKOWICZ_JACOBI_BASE,
+                                         1);
+  CHKERR simpleInterface->addBoundaryField(domainField, H1, DEMKOWICZ_JACOBI_BASE,
                                          1);
   CHKERR simpleInterface->setFieldOrder(domainField, oRder);
 
@@ -460,6 +468,9 @@ MoFEMErrorCode Poisson3DCutFEM::assembleSystem() {
   // pipeline_mng->getOpSkeletonLhsPipeline().push_back(
   //     new OpL2LhsGhostPenalty(side_fe_ptr));
 
+  //FIXME: delete possibly
+  // pipeline_mng->getOpBoundaryLhsPipeline().push_back(
+  //     new OpL2LhsPenalty(side_fe_ptr));
   MoFEMFunctionReturn(0);
 }
 //! [Assemble system]
@@ -470,11 +481,13 @@ MoFEMErrorCode Poisson3DCutFEM::setIntegrationRules() {
 
   auto rule_lhs = [](int, int, int p) -> int { return 2 * p; };
   auto rule_rhs = [](int, int, int p) -> int { return 2 * p; };
-  auto rule_2 = [this](int, int, int) { return 2 * oRder + 1; };
+  auto rule_2 = [this](int, int, int) { return 2 * oRder; };
 
   auto pipeline_mng = mField.getInterface<PipelineManager>();
   CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule_lhs);
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule_rhs);
+  CHKERR pipeline_mng->setSkeletonLhsIntegrationRule(rule_2);
+  CHKERR pipeline_mng->setSkeletonRhsIntegrationRule(rule_2);
     
   SetIntegrationOnActiveCells setIntegrationOnActiveCells(mField, activeCells, insideCells);
   auto rule_active_cells = [&setIntegrationOnActiveCells](MoFEM::ForcesAndSourcesCore* fe_ptr, int a, int b, int c) {
@@ -490,7 +503,7 @@ MoFEMErrorCode Poisson3DCutFEM::setIntegrationRules() {
 
   static_cast<ForcesAndSourcesCore *>(pipeline_mng->getDomainRhsFE().get())->setRuleHook = rule_active_cells;
   static_cast<ForcesAndSourcesCore *>(pipeline_mng->getDomainLhsFE().get())->setRuleHook = rule_active_cells;
-
+  std::cout << "Finished assigning integration rules.. " << std::endl;
   // CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule_rhs_cf);
   // CHKERR pipeline_mng->setDomainRhsIntegrationRule();
 
@@ -521,7 +534,7 @@ MoFEMErrorCode Poisson3DCutFEM::solveSystem() {
   MoFEMFunctionBegin;
 
   auto pipeline_mng = mField.getInterface<PipelineManager>();
-
+  std::cout << "Solving the system... " << std::endl;
   auto ksp_solver = pipeline_mng->createKSP();
   CHKERR KSPSetFromOptions(ksp_solver);
   CHKERR KSPSetUp(ksp_solver);
@@ -532,6 +545,7 @@ MoFEMErrorCode Poisson3DCutFEM::solveSystem() {
   auto D = vectorDuplicate(F);
 
   CHKERR KSPSolve(ksp_solver, F, D);
+  std::cout << "After ksp solve... " << std::endl;
 
   // Scatter result data on the mesh
   CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);

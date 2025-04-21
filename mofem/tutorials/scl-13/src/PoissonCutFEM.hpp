@@ -394,52 +394,85 @@ struct SetIntegrationOnActiveCells : public VolumeElementForcesAndSourcesCore {
     auto fe_handle = fe_raw_ptr->getFEEntityHandle();
     auto bit_mng = m_field.getInterface<BitRefManager>();
 
-    auto set_gauss_pts = [&](auto &ref_gauss_pts) {
-      MoFEMFunctionBegin;
-      fe_ptr->gaussPts.swap(ref_gauss_pts);
-      const size_t nb_gauss_pts = fe_ptr->gaussPts.size2();
-      auto &data = fe_ptr->getDataOnElementBySpaceArray()[H1];
-      data->dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4);
-      data->dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(nb_gauss_pts, 12);
+    const int rule = 2 * order_data + 1; // FIXME:
+    // gaussPts = fe_ptr->gaussPts; // FIXME:
 
-      double *shape_ptr =
-          &*data->dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-      CHKERR ShapeMBTET(shape_ptr, &fe_ptr->gaussPts(0, 0),
-                        &fe_ptr->gaussPts(1, 0), &fe_ptr->gaussPts(2, 0),
-                        nb_gauss_pts);
-      double diff_shape_fun[12];
-      CHKERR ShapeDiffMBTET(diff_shape_fun);
+    // print insideCells
+    // std::cout << "Inside cells: " << insideCells << "\n";
 
-      MoFEMFunctionReturnHot(0);
-      // double *shape_ptr =
-      //     &*data->dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-      // double *diff_shape_fun =
-      //     &*data->dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin();
-      std::cout << " Setting shape funcs pts... \n";
+  // auto calc_base_for_tet = [&]() {
+  //   MoFEMFunctionBegin;
+  //   // const size_t nb_gauss_pts = gaussPts.size2();
+  //   const size_t nb_gauss_pts = QUAD_3D_TABLE[rule]->npoints;
+  //   auto &gauss_pts = fe_ptr->gaussPts;
+  //   gauss_pts.resize(4, nb_gauss_pts, false);
 
-      // auto base = data->dataOnEntities[MBVERTEX][0].getBase();
-      auto base = DEMKOWICZ_JACOBI_BASE;
-      CHKERR HexPolynomialBase().getValue(
-          fe_ptr->gaussPts,
-          boost::shared_ptr<EntPolynomialBaseCtx>(new EntPolynomialBaseCtx(
-              *data, "U", H1, CONTINUOUS, base, base)));
+  //   auto &data = fe_ptr->getDataOnElementBySpaceArray()[H1];
+  //   auto &base = data->dataOnEntities[MBVERTEX][0].getN(NOBASE);
+  //   auto &diff_base = data->dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+  //   base.resize(nb_gauss_pts, 4, false);
+  //   diff_base.resize(nb_gauss_pts, 12, false);
+  //   CHKERR Tools::shapeFunMBTET(&*base.data().begin(), &gauss_pts(0, 0),
+  //                               &gauss_pts(1, 0), &gauss_pts(2, 0), nb_gauss_pts);
+  //   double *diff_shape_ptr = &*diff_base.data().begin();
+  //   for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+  //     for (int nn = 0; nn != 4; ++nn) {
+  //       for (int dd = 0; dd != 3; ++dd, ++diff_shape_ptr) {
+  //         *diff_shape_ptr = Tools::diffShapeFunMBTET[3 * nn + dd];
+  //       }
+  //     }
+  //   }
+  //   MoFEMFunctionReturn(0);
+  // };
 
-      // CHKERR HexPolynomialBase().getValueH1(fe_ptr->gaussPts);
-      // CHKERR ShapeMBTET(shape_ptr, &fe_ptr->gaussPts(0, 0),
-      //                   &fe_ptr->gaussPts(1, 0), &fe_ptr->gaussPts(2, 0),
-      //                   nb_gauss_pts);
-      // std::cout << " Setting shape funcs pts2... \n";
-      // double diff_shape_fun[12];
-      // CHKERR ShapeDiffMBTET(diff_shape_fun);
-      std::cout << " Setting shape funcs pts3... \n";
+    // auto set_integration_pts_for_tet = [&]() {
+    //   MoFEMFunctionBegin;
+    //   if (rule < QUAD_3D_TABLE_SIZE) {
+    //     if (QUAD_3D_TABLE[rule]->dim != 3) {
+    //       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
+    //     }
+    //     if (QUAD_3D_TABLE[rule]->order < rule) {
+    //       SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    //                "wrong order %d != %d", QUAD_3D_TABLE[rule]->order, rule);
+    //     }
+    //     size_t nb_gauss_pts = QUAD_3D_TABLE[rule]->npoints;
+    //     gaussPts.resize(4, nb_gauss_pts, false);
+    //     cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[1], 4,
+    //                 &gaussPts(0, 0), 1);
+    //     cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[2], 4,
+    //                 &gaussPts(1, 0), 1);
+    //     cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[3], 4,
+    //                 &gaussPts(2, 0), 1);
+    //     cblas_dcopy(nb_gauss_pts, QUAD_3D_TABLE[rule]->weights, 1,
+    //                 &gaussPts(3, 0), 1);
 
-      MoFEMFunctionReturn(0);
-    };
+    //     // CHKERR calc_base_for_tet();
 
+    //     auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+    //     auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+    //     base.resize(nb_gauss_pts, 4, false);
+    //     diff_base.resize(nb_gauss_pts, 12, false);
+    //     double *shape_ptr = &*base.data().begin();
+    //     cblas_dcopy(4 * nb_gauss_pts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr,
+    //                 1);
+    //     double *diff_shape_ptr = &*diff_base.data().begin();
+    //     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+    //       for (int nn = 0; nn != 4; ++nn) {
+    //         for (int dd = 0; dd != 3; ++dd, ++diff_shape_ptr) {
+    //           *diff_shape_ptr = Tools::diffShapeFunMBTET[3 * nn + dd];
+    //         }
+    //       }
+    //     }
+
+    //   } else {
+    //     SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    //              "rule > quadrature order %d < %d", rule, QUAD_3D_TABLE_SIZE);
+    //   }
+    //   MoFEMFunctionReturn(0);
+    // };
 
     auto set_base_quadrature = [&]() {
       MoFEMFunctionBegin;
-      int rule = 2 * order_data + 1;
       if (rule < QUAD_3D_TABLE_SIZE) {
         if (QUAD_3D_TABLE[rule]->dim != 3) {
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -462,12 +495,29 @@ struct SetIntegrationOnActiveCells : public VolumeElementForcesAndSourcesCore {
                     &gauss_pts(3, 0), 1);
         // auto &data = fe_ptr->dataOnElement[H1];
         auto &data = fe_ptr->getDataOnElementBySpaceArray()[H1];
-        data->dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
-                                                              false);
-        double *shape_ptr =
-            &*data->dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-        cblas_dcopy(4 * nb_gauss_pts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr,
-                    1);
+        // data->dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
+        //                                                       false);
+        // double *shape_ptr =
+        //     &*data->dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+        // cblas_dcopy(4 * nb_gauss_pts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr,
+        //             1);
+
+        auto &base = data->dataOnEntities[MBVERTEX][0].getN(NOBASE);
+        auto &diff_base = data->dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+        base.resize(nb_gauss_pts, 4, false);
+        diff_base.resize(nb_gauss_pts, 12, false);
+        CHKERR Tools::shapeFunMBTET(&*base.data().begin(), &gauss_pts(0, 0),
+                                    &gauss_pts(1, 0), &gauss_pts(2, 0),
+                                    nb_gauss_pts);
+        double *diff_shape_ptr = &*diff_base.data().begin();
+        for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+          for (int nn = 0; nn != 4; ++nn) {
+            for (int dd = 0; dd != 3; ++dd, ++diff_shape_ptr) {
+              *diff_shape_ptr = Tools::diffShapeFunMBTET[3 * nn + dd];
+            }
+          }
+        }
+
       } else {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "rule > quadrature order %d < %d", rule, QUAD_3D_TABLE_SIZE);
@@ -475,88 +525,16 @@ struct SetIntegrationOnActiveCells : public VolumeElementForcesAndSourcesCore {
       MoFEMFunctionReturn(0);
     };
 
-    // CHKERR set_base_quadrature();
+    auto set_integration_for_hex = [&]() {
+      MoFEMFunctionBegin;
+      CHKERR Tools::outerProductOfEdgeIntegrationPtsForHex(fe_ptr->gaussPts,
+                                                           rule, rule, rule);
+      MoFEMFunctionReturn(0);
+    };
 
-    if (activeCells.find(fe_handle) != activeCells.end()) {
-      std::cout << " Setting integration points for this element: " << fe_handle << "\n";
-      auto refine_quadrature = [&]() {
+     auto calc_base_for_hex = [&](MatrixDouble &gaussPts) {
         MoFEMFunctionBegin;
-
-        std::function<Range(Range &)> get_all_children =
-            [&](Range &ents) -> Range {
-          Range all_children;
-          CHKERR(bit_mng->updateRangeByChildren(ents, all_children));
-          // if (!all_children.empty()) {
-          //   ents.merge(get_all_children(all_children));
-          // }
-
-          Range children_level;
-          for (auto &ent : all_children.subset_by_dimension(3)) {
-            Range parent(ent, ent);
-            children_level.merge(get_all_children(parent));
-          }
-
-          return children_level.empty() ? ents : children_level;
-        };
-
-        Range single_ent(fe_handle, fe_handle);
-
-        auto all_refined_tets = get_all_children(single_ent);
-        all_refined_tets = all_refined_tets.subset_by_dimension(3);
-        // if (debug) {
-        //   CHKERR save_range(moab, "ref_tets.vtk", tets);
-        // }
-
-        MatrixDouble ref_coords(all_refined_tets.size(), 12, false);
-        std::cout << " Number of tets: " << all_refined_tets.size() << "\n";
-        std::cout << " all refined tets: " << all_refined_tets << "\n";
-        int tt = 0;
-        for (Range::iterator tit = all_refined_tets.begin();
-             tit != all_refined_tets.end(); tit++, tt++) {
-          int num_nodes;
-          const EntityHandle *conn;
-          CHKERR moab.get_connectivity(*tit, conn, num_nodes, true); // false
-          CHKERR moab.get_coords(conn, num_nodes, &ref_coords(tt, 0));
-        }
-        std::cout << " We have the coords... \n";
-        auto &data = fe_ptr->getDataOnElementBySpaceArray()[H1];
-        const size_t nb_gauss_pts = fe_ptr->gaussPts.size2();
-        MatrixDouble ref_gauss_pts(4, nb_gauss_pts * ref_coords.size1());
-        MatrixDouble &shape_n = data->dataOnEntities[MBVERTEX][0].getN(NOBASE);
-        std::cout << " Calculating shape funcs... \n";
-        int gg = 0;
-        for (size_t tt = 0; tt != ref_coords.size1(); tt++) {
-          double *tet_coords = &ref_coords(tt, 0);
-          double det = Tools::tetVolume(tet_coords);
-          det *= 6;
-          for (size_t ggg = 0; ggg != nb_gauss_pts; ++ggg, ++gg) {
-            for (int dd = 0; dd != 3; dd++) {
-              ref_gauss_pts(dd, gg) = shape_n(ggg, 0) * tet_coords[3 * 0 + dd] +
-                                      shape_n(ggg, 1) * tet_coords[3 * 1 + dd] +
-                                      shape_n(ggg, 2) * tet_coords[3 * 2 + dd] +
-                                      shape_n(ggg, 3) * tet_coords[3 * 3 + dd];
-            }
-            ref_gauss_pts(3, gg) = fe_ptr->gaussPts(3, ggg) * det;
-          }
-        }
-
-        std::cout << " Setting gauss pts... \n";
-        CHKERR set_gauss_pts(ref_gauss_pts);
-
-        std::cout << " Setting gauss pts2... \n";
-        MoFEMFunctionReturn(0);
-      };
-
-      CHKERR refine_quadrature();
-    } else if (insideCells.find(fe_handle) != insideCells.end()) {
-      std::cout << " Setting STANDARD integration points for this element: " << fe_handle << "\n";
-
-      // CHKERR set_base_quadrature();
-      // CHKERR setIntegrationPts();
-
-      auto calc_base_for_hex = [&]() {
-        MoFEMFunctionBegin;
-        gaussPts = fe_ptr->gaussPts;
+        // gaussPts = fe_ptr->gaussPts;
         const size_t nb_gauss_pts = gaussPts.size2();
         auto &data = fe_ptr->getDataOnElementBySpaceArray()[H1];
         auto &base = data->dataOnEntities[MBVERTEX][0].getN(NOBASE);
@@ -603,14 +581,145 @@ struct SetIntegrationOnActiveCells : public VolumeElementForcesAndSourcesCore {
         MoFEMFunctionReturn(0);
       };
 
-      const int rule = 2 * order_data + 1;
-      CHKERR Tools::outerProductOfEdgeIntegrationPtsForHex(fe_ptr->gaussPts,
-                                                           rule, rule, rule);
+     auto set_gauss_pts = [&](auto &ref_gauss_pts) {
+       MoFEMFunctionBegin;
+       fe_ptr->gaussPts.swap(ref_gauss_pts);
+       const size_t nb_gauss_pts = fe_ptr->gaussPts.size2();
+       auto &data = fe_ptr->getDataOnElementBySpaceArray()[H1];
+
+      CHKERR calc_base_for_hex(fe_ptr->gaussPts);
+      MoFEMFunctionReturnHot(0);
+      //  CHKERR calc_base_for_hex(fe_ptr->gaussPts);
+      //  CHKERR ShapeMBTET(shape_ptr, &fe_ptr->gaussPts(0, 0),
+      //                    &fe_ptr->gaussPts(1, 0), &fe_ptr->gaussPts(2, 0),
+      //                    nb_gauss_pts);
+       // double diff_shape_fun[12];
+       // CHKERR ShapeDiffMBTET(diff_shape_fun);
+
+       // double *shape_ptr = 
+       //     &*data->dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+       // double *diff_shape_fun =
+       //     &*data->dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin();
+       std::cout << " Setting shape funcs pts hex... \n";
+       MoFEMFunctionReturnHot(0);
+
+       // auto base = data->dataOnEntities[MBVERTEX][0].getBase();
+       auto base = DEMKOWICZ_JACOBI_BASE;
+       CHKERR HexPolynomialBase().getValue(
+           fe_ptr->gaussPts,
+           boost::shared_ptr<EntPolynomialBaseCtx>(new EntPolynomialBaseCtx(
+               *data, "U", H1, CONTINUOUS, base, base)));
+
+       MoFEMFunctionReturnHot(0);
+       // CHKERR HexPolynomialBase().getValueH1(fe_ptr->gaussPts);
+       // CHKERR ShapeMBTET(shape_ptr, &fe_ptr->gaussPts(0, 0),
+       //                   &fe_ptr->gaussPts(1, 0), &fe_ptr->gaussPts(2, 0),
+       //                   nb_gauss_pts);
+       // std::cout << " Setting shape funcs pts2... \n";
+       // double diff_shape_fun[12];
+       // CHKERR ShapeDiffMBTET(diff_shape_fun);
+       std::cout << " Setting shape funcs pts3... \n";
+
+       MoFEMFunctionReturn(0);
+     };
+
+     // CHKERR set_base_quadrature();
+
+     if (activeCells.find(fe_handle) != activeCells.end()) {
+       std::cout << " Setting integration points for this element: "
+                 << fe_handle << " " << type_from_handle(fe_handle) << "\n";
+       auto refine_quadrature = [&]() {
+         MoFEMFunctionBegin;
+
+         std::function<Range(Range &)> get_all_children =
+             [&](Range &ents) -> Range {
+           Range all_children;
+           CHKERR(bit_mng->updateRangeByChildren(ents, all_children));
+           // if (!all_children.empty()) {
+           //   ents.merge(get_all_children(all_children));
+           // }
+
+           Range children_level;
+           for (auto &ent : all_children.subset_by_dimension(3)) {
+             Range parent(ent, ent);
+             children_level.merge(get_all_children(parent));
+           }
+
+           return children_level.empty() ? ents : children_level;
+         };
+
+         Range single_ent(fe_handle, fe_handle);
+
+         auto all_refined_tets = get_all_children(single_ent);
+         all_refined_tets = all_refined_tets.subset_by_dimension(3);
+         // if (debug) {
+         //   CHKERR save_range(moab, "ref_tets.vtk", tets);
+         // }
+
+         MatrixDouble ref_coords(all_refined_tets.size(), 12, false);
+         std::cout << " Number of tets: " << all_refined_tets.size() << "\n";
+         // std::cout << " all refined tets: " << all_refined_tets << "\n";
+         int tt = 0;
+         for (Range::iterator tit = all_refined_tets.begin();
+              tit != all_refined_tets.end(); tit++, tt++) {
+           int num_nodes;
+           const EntityHandle *conn;
+           CHKERR moab.get_connectivity(*tit, conn, num_nodes, true); // false
+           CHKERR moab.get_coords(conn, num_nodes, &ref_coords(tt, 0));
+         }
+         std::cout << " We have the coords... \n";
+         auto &data = fe_ptr->getDataOnElementBySpaceArray()[H1];
+         // CHKERR calc_base_for_tet();
+         // CHKERR set_base_quadrature();
+         CHKERR set_integration_for_hex();
+         // const size_t nb_gauss_pts = fe_ptr->gaussPts.size2();
+         const size_t nb_gauss_pts = QUAD_3D_TABLE[rule]->npoints;
+         CHKERR calc_base_for_hex(fe_ptr->gaussPts);
+
+         // const size_t nb_gauss_pts = QUAD_3D_TABLE[rule]->npoints;
+         MatrixDouble ref_gauss_pts(4, nb_gauss_pts * ref_coords.size1());
+         MatrixDouble &shape_n = data->dataOnEntities[MBVERTEX][0].getN();
+         std::cout << " Calculating shape funcs... \n";
+         int gg = 0;
+         for (size_t tt = 0; tt != ref_coords.size1(); tt++) {
+           double *tet_coords = &ref_coords(tt, 0);
+           double det = 6 * Tools::tetVolume(tet_coords);
+
+           for (size_t ggg = 0; ggg != nb_gauss_pts; ++ggg, ++gg) {
+             for (int dd = 0; dd != 3; dd++) {
+               ref_gauss_pts(dd, gg) =
+                   shape_n(ggg, 0) * tet_coords[3 * 0 + dd] +
+                   shape_n(ggg, 1) * tet_coords[3 * 1 + dd] +
+                   shape_n(ggg, 2) * tet_coords[3 * 2 + dd] +
+                   shape_n(ggg, 3) * tet_coords[3 * 3 + dd];
+             }
+             ref_gauss_pts(3, gg) = fe_ptr->gaussPts(3, ggg) * det;
+           }
+         }
+
+         std::cout << " Setting gauss pts... \n";
+         CHKERR set_gauss_pts(ref_gauss_pts);
+
+         std::cout << " Setting gauss pts2... \n";
+         MoFEMFunctionReturn(0);
+       };
+
+       CHKERR refine_quadrature();
+    } else if (insideCells.find(fe_handle) != insideCells.end()) {
+      std::cout << " Setting STANDARD integration points for this element: "
+                << fe_handle << " " << type_from_handle(fe_handle) << "\n";
+
+      // CHKERR set_base_quadrature();
+      // CHKERR setIntegrationPts();
+
       std::cout << " Calculating base for hex... \n";
-      CHKERR calc_base_for_hex();
+      CHKERR set_integration_for_hex();
+      CHKERR calc_base_for_hex(fe_ptr->gaussPts);
       std::cout << " Calculating base for hex2... \n";
     } else {
-      std::cout << " No integration points are set for this element: " << fe_handle << "\n";
+      // CHKERR set_integration_for_hex();
+      // CHKERR calc_base_for_hex(fe_ptr->gaussPts);
+      std::cout << " No integration points are set for this element: " << fe_handle << " " << type_from_handle(fe_handle) << "\n";
     }
 
     MoFEMFunctionReturn(0);
@@ -988,6 +1097,7 @@ public:
 
     // Collect data from side domian elements
     CHKERR loopSideVolumes("dFE", *sideFEPtr);
+    // CHKERR loopSideFaces("dFE", *sideFEPtr);
     const auto in_the_loop =
         sideFEPtr->nInTheLoop; // return number of elements on the side
 
